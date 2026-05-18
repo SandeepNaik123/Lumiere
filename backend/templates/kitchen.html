@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lumière — Kitchen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0a0a0a; color: #eee; font-family: 'Lato', sans-serif; min-height: 100vh; }
+
+        .header {
+            background: #111; border-bottom: 1px solid #222;
+            padding: 16px 28px; display: flex; align-items: center;
+            justify-content: space-between; position: sticky; top: 0; z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header h1 { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #c8a96a; letter-spacing: 1px; }
+        .kitchen-badge { background: #1a1a1a; border: 1px solid #333; color: #aaa; font-size: 11px; padding: 4px 10px; border-radius: 20px; letter-spacing: 1px; text-transform: uppercase; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .live-dot { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #aaa; }
+        .live-dot span { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)} }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-links a { background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; text-decoration: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; transition: all .2s; }
+        .nav-links a:hover { border-color: #c8a96a; color: #c8a96a; }
+
+        .main { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+
+        .stats-bar { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-pill { background: #111; border: 1px solid #222; border-radius: 10px; padding: 12px 20px; }
+        .stat-pill .num { font-size: 22px; font-weight: 700; color: #c8a96a; font-family: 'Cormorant Garamond', serif; }
+        .stat-pill .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: .8px; }
+
+        .section-title {
+            font-family: 'Cormorant Garamond', serif; font-size: 16px; color: #c8a96a;
+            letter-spacing: 1px; margin: 0 0 14px; padding-bottom: 8px;
+            border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 8px;
+        }
+        .section-wrap { margin-bottom: 32px; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #444; }
+        .empty-state .icon { font-size: 52px; margin-bottom: 14px; }
+        .empty-state p { font-size: 15px; }
+        .empty-section { color: #444; font-size: 13px; padding: 16px 0; }
+
+        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+
+        .order-card { background: #111; border: 1px solid #222; border-radius: 14px; overflow: hidden; }
+        .order-card.pending   { border-left: 3px solid #f59e0b; }
+        .order-card.preparing { border-left: 3px solid #3b82f6; }
+
+        /* Delivery card gets a blue tint */
+        .order-card.delivery-order { background: #0d1525; }
+
+        .order-card-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1a1a1a; }
+        .order-id { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: #c8a96a; font-weight: 600; }
+
+        .table-chip { background: #1a1a1a; border: 1px solid #2a2a2a; color: #eee; font-size: 12px; padding: 4px 10px; border-radius: 20px; }
+        .table-chip.delivery { background: #1a1f35; border-color: #3b82f655; color: #93c5fd; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .status-chip { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+        .status-chip.pending   { background: #451a03; color: #f59e0b; }
+        .status-chip.preparing { background: #1e3a5f; color: #60a5fa; }
+
+        .order-card-body { padding: 14px 16px; }
+
+        .delivery-address-strip {
+            background: #0a1020; border: 1px solid #3b82f622; border-radius: 8px;
+            padding: 7px 10px; margin-bottom: 10px; font-size: 12px; color: #93c5fd;
+            display: flex; align-items: flex-start; gap: 6px; line-height: 1.5;
+        }
+
+        .item-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
+        .item-row:last-child { border-bottom: none; }
+        .item-name { color: #ddd; }
+        .item-qty { background: #1a1a1a; color: #c8a96a; font-weight: 700; font-size: 12px; padding: 2px 9px; border-radius: 20px; min-width: 32px; text-align: center; }
+
+        .order-note { margin-top: 10px; background: #1a1a1a; border-left: 2px solid #c8a96a; padding: 8px 10px; font-size: 12px; color: #aaa; border-radius: 0 6px 6px 0; }
+
+        .order-card-footer { padding: 12px 16px; border-top: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .order-time { font-size: 11px; color: #555; }
+        .action-btns { display: flex; gap: 8px; }
+
+        .btn-prepare { background: #1e3a5f; color: #60a5fa; border: 1px solid #2563eb; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; }
+        .btn-prepare:hover { background: #2563eb; color: #fff; }
+
+        .btn-deliver { background: #14532d; color: #4ade80; border: 1px solid #16a34a; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; }
+        .btn-deliver:hover { background: #16a34a; color: #fff; }
+
+        /* Ready for pickup — orange */
+        .btn-ready { background: #431407; color: #fb923c; border: 1px solid #ea580c; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; }
+        .btn-ready:hover { background: #ea580c; color: #fff; }
+
+        .new-badge { background: #7c2d12; color: #fb923c; font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; animation: blink 1s infinite; }
+        .delivery-badge { background: #1a1f35; color: #93c5fd; font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; border: 1px solid #3b82f644; }
+
+        @keyframes blink { 0%,100%{opacity:1}50%{opacity:.4} }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <h1>🍴 Lumière</h1>
+        <span class="kitchen-badge">Kitchen Display</span>
+    </div>
+    <div class="header-right">
+        <div class="live-dot"><span></span> Live — auto refreshes every 8s</div>
+        <div class="nav-links">
+            <a href="/delivery">🛵 Delivery</a>
+            <a href="/billing">💳 Billing</a>
+            <a href="/admin">⚙️ Admin</a>
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="stats-bar" id="statsBar">
+        <div class="stat-pill"><div class="num" id="statPending">0</div><div class="label">Pending</div></div>
+        <div class="stat-pill"><div class="num" id="statPreparing">0</div><div class="label">Preparing</div></div>
+        <div class="stat-pill"><div class="num" id="statDelivery">0</div><div class="label">Delivery Orders</div></div>
+    </div>
+
+    <!-- Dine-in orders -->
+    <div class="section-wrap">
+        <div class="section-title">🪑 Dine-In Orders</div>
+        <div id="dineinContainer"><p class="empty-section">No dine-in orders right now.</p></div>
+    </div>
+
+    <!-- Delivery orders -->
+    <div class="section-wrap">
+        <div class="section-title">🛵 Delivery Orders</div>
+        <div id="deliveryContainer"><p class="empty-section">No delivery orders right now.</p></div>
+    </div>
+</div>
+
+<script>
+var lastOrderIds = [];
+
+function timeSince(dateStr) {
+    var d = new Date(dateStr);
+    var secs = Math.floor((new Date() - d) / 1000);
+    if (secs < 60) return secs + 's ago';
+    if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+    return Math.floor(secs / 3600) + 'h ago';
+}
+
+function doAction(id, action, btn) {
+    btn.disabled = true;
+    btn.textContent = '…';
+    fetch('/kitchen/action/' + id + '/' + action)
+        .then(function(r) { return r.json(); })
+        .then(function(d) { if (d.success) loadOrders(); })
+        .catch(function() { btn.disabled = false; });
+}
+
+function buildCard(o) {
+    var isDelivery = o.order_type === 'delivery';
+    var isNew      = o.status === 'pending';
+
+    var tableChip = isDelivery
+        ? '<span class="table-chip delivery" title="' + (o.delivery_address || '') + '">🛵 ' +
+          (o.delivery_address ? o.delivery_address.substring(0, 22) + '…' : 'Delivery') + '</span>'
+        : '<span class="table-chip">🪑 Table ' + o.table + '</span>';
+
+    var html =
+        '<div class="order-card ' + o.status + (isDelivery ? ' delivery-order' : '') + '">' +
+        '<div class="order-card-header">' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+                '<span class="order-id">#' + o.id + '</span>' +
+                (isNew      ? '<span class="new-badge">NEW</span>'          : '') +
+                (isDelivery ? '<span class="delivery-badge">DELIVERY</span>' : '') +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+                tableChip +
+                '<span class="status-chip ' + o.status + '">' +
+                    (o.status === 'pending' ? '⏳ Pending' : '👨‍🍳 Preparing') +
+                '</span>' +
+            '</div>' +
+        '</div>' +
+        '<div class="order-card-body">';
+
+    /* Show full address for delivery */
+    if (isDelivery && o.delivery_address) {
+        html += '<div class="delivery-address-strip">📍 <span>' + o.delivery_address + '</span></div>';
+    }
+
+    o.items.forEach(function(item) {
+        html +=
+            '<div class="item-row">' +
+                '<span class="item-name">' + item.name + '</span>' +
+                '<span class="item-qty">×' + item.qty + '</span>' +
+            '</div>';
+    });
+
+    if (o.note) {
+        html += '<div class="order-note">📝 ' + o.note + '</div>';
+    }
+
+    html +=
+        '</div>' +
+        '<div class="order-card-footer">' +
+            '<span class="order-time">🕐 ' + timeSince(o.created) + '</span>' +
+            '<div class="action-btns">';
+
+    if (o.status === 'pending') {
+        html += '<button class="btn-prepare" onclick="doAction(' + o.id + ',\'preparing\',this)">👨‍🍳 Start</button>';
+    }
+
+    if (o.status === 'preparing') {
+        if (isDelivery) {
+            /* Delivery: kitchen marks "ready" → delivery boy picks it up */
+            html += '<button class="btn-ready" onclick="doAction(' + o.id + ',\'ready\',this)">📦 Ready for Pickup</button>';
+        } else {
+            /* Dine-in: kitchen marks delivered directly */
+            html += '<button class="btn-deliver" onclick="doAction(' + o.id + ',\'delivered\',this)">✅ Served</button>';
+        }
+    }
+
+    html += '</div></div></div>';
+    return html;
+}
+
+function loadOrders() {
+    fetch('/kitchen/poll')
+        .then(function(r) { return r.json(); })
+        .then(function(orders) {
+            var pending   = orders.filter(function(o) { return o.status === 'pending'; });
+            var preparing = orders.filter(function(o) { return o.status === 'preparing'; });
+            var delivery  = orders.filter(function(o) { return o.order_type === 'delivery'; });
+
+            document.getElementById('statPending').textContent   = pending.length;
+            document.getElementById('statPreparing').textContent = preparing.length;
+            document.getElementById('statDelivery').textContent  = delivery.length;
+
+            /* Sound for new orders */
+            var newIds = orders.map(function(o) { return o.id; });
+            var hasNew = newIds.some(function(id) { return lastOrderIds.indexOf(id) === -1; });
+            if (hasNew && lastOrderIds.length > 0) {
+                try {
+                    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    var osc = ctx.createOscillator();
+                    var gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.frequency.value = 880;
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+                } catch(e) {}
+            }
+            lastOrderIds = newIds;
+
+            /* Split dine-in vs delivery */
+            var dinein    = orders.filter(function(o) { return o.order_type !== 'delivery'; });
+            var delOrders = orders.filter(function(o) { return o.order_type === 'delivery'; });
+
+            var dc = document.getElementById('dineinContainer');
+            var dl = document.getElementById('deliveryContainer');
+
+            if (dinein.length === 0) {
+                dc.innerHTML = '<p class="empty-section">No dine-in orders right now.</p>';
+            } else {
+                var h = '<div class="orders-grid">';
+                dinein.forEach(function(o) { h += buildCard(o); });
+                dc.innerHTML = h + '</div>';
+            }
+
+            if (delOrders.length === 0) {
+                dl.innerHTML = '<p class="empty-section">No delivery orders right now.</p>';
+            } else {
+                var h2 = '<div class="orders-grid">';
+                delOrders.forEach(function(o) { h2 += buildCard(o); });
+                dl.innerHTML = h2 + '</div>';
+            }
+        });
+}
+
+loadOrders();
+setInterval(loadOrders, 8000);
+</script>
+</body>
+</html>

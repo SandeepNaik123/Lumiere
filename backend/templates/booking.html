@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Book a Table — Lumière</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0b0f1a;
+            color: white;
+            font-family: 'Lato', sans-serif;
+        }
+
+        .booking-hero {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(160deg, #0b0f1a 0%, #1a1f2e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            position: relative;
+            border-bottom: 1px solid #c8a96a22;
+        }
+        .booking-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, #c8a96a0d 0%, transparent 70%);
+        }
+        .booking-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px 40px;
+            position: absolute;
+            top: 0;
+        }
+        .nav-logo { display: flex; align-items: center; gap: 8px; }
+        .logo-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 26px; font-weight: 600;
+            color: #c8a96a; letter-spacing: 2px;
+        }
+        .back-link {
+            color: #c8a96a; text-decoration: none;
+            font-size: 13px; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 6px;
+            transition: opacity 0.3s;
+        }
+        .back-link:hover { opacity: 0.7; }
+        .booking-hero-content { position: relative; z-index: 2; }
+        .booking-hero-content p {
+            font-size: 12px; letter-spacing: 4px;
+            color: #c8a96a; text-transform: uppercase; margin-bottom: 10px;
+        }
+        .booking-hero-content h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 52px; color: white; letter-spacing: 4px;
+        }
+
+        .booking-wrap {
+            width: 100%; max-width: 600px;
+            margin: 0 auto; padding: 50px 20px 80px;
+        }
+        .booking-card {
+            background: #111827;
+            border: 1px solid #c8a96a22;
+            border-radius: 16px;
+            padding: 45px 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .booking-card h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 30px; color: #c8a96a;
+            margin-bottom: 6px; letter-spacing: 1px;
+        }
+        .booking-card .sub {
+            font-size: 13px; color: #666;
+            margin-bottom: 30px; letter-spacing: 0.5px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px; margin-bottom: 16px;
+        }
+        .form-group {
+            display: flex; flex-direction: column;
+            gap: 6px; margin-bottom: 16px;
+        }
+        .form-group label {
+            font-size: 11px; letter-spacing: 2px;
+            text-transform: uppercase; color: #c8a96a; font-weight: 400;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: #1f2937;
+            border: 1px solid #c8a96a33;
+            border-radius: 8px; padding: 12px 14px;
+            color: white; font-size: 14px;
+            font-family: 'Lato', sans-serif;
+            outline: none; transition: border 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus { border-color: #c8a96a; }
+        .form-group select option { background: #1f2937; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        .booking-submit {
+            width: 100%; padding: 14px;
+            background: #c8a96a; color: black;
+            border: none; border-radius: 8px;
+            font-size: 15px; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            cursor: pointer; margin-top: 10px;
+            transition: background 0.3s, transform 0.2s;
+            font-family: 'Lato', sans-serif;
+        }
+        .booking-submit:hover { background: #dfc080; transform: translateY(-1px); }
+
+        /* ── SUCCESS / PENDING BOX ── */
+        .success-box {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .success-icon { font-size: 52px; margin-bottom: 16px; }
+        .success-box h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px; color: #c8a96a;
+            margin-bottom: 10px;
+        }
+        .success-box p {
+            color: #aaa; font-size: 14px;
+            margin-bottom: 14px; line-height: 1.7;
+        }
+
+        /* pending info box */
+        .pending-info {
+            background: #78350f22;
+            border: 1px solid #f59e0b44;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin: 16px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            text-align: left;
+        }
+        .pending-info .pi-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+        .pending-info .pi-text { font-size: 13px; color: #fcd34d; line-height: 1.6; }
+        .pending-info .pi-text strong { display: block; margin-bottom: 4px; font-size: 14px; }
+
+        /* steps */
+        .booking-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: #aaa;
+        }
+        .step-num {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: #c8a96a22;
+            border: 1px solid #c8a96a44;
+            color: #c8a96a;
+            font-size: 12px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .success-box a {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #c8a96a; color: black;
+            border-radius: 8px; text-decoration: none;
+            font-weight: bold; font-size: 14px;
+            letter-spacing: 1px; transition: background 0.3s;
+            margin-top: 10px;
+        }
+        .success-box a:hover { background: #dfc080; }
+
+        @media(max-width: 600px) {
+            .booking-card { padding: 30px 22px; }
+            .form-row { grid-template-columns: 1fr; }
+            .booking-hero-content h1 { font-size: 36px; }
+            .booking-header { padding: 18px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="booking-hero">
+    <div class="booking-header">
+        <div class="nav-logo">
+            <span>🍴</span>
+            <span class="logo-text">Lumière</span>
+        </div>
+        <a href="/" class="back-link">← Back to Menu</a>
+    </div>
+    <div class="booking-hero-content">
+        <p>Reserve Your Experience</p>
+        <h1>Book a Table</h1>
+    </div>
+</div>
+
+<div class="booking-wrap">
+    <div class="booking-card">
+
+        {% if success %}
+        <!-- ── BOOKING SUBMITTED ── -->
+        <div class="success-box">
+            <div class="success-icon">🎉</div>
+            <h2>Request Received!</h2>
+            <p>Thank you for choosing Lumière.<br>Your booking request has been sent to our team.</p>
+
+            <div class="pending-info">
+                <div class="pi-icon">⏳</div>
+                <div class="pi-text">
+                    <strong>Booking Status: Pending Confirmation</strong>
+                    Our team will review your request and confirm your table shortly.
+                    Please arrive on time on your selected date.
+                </div>
+            </div>
+
+            <div class="booking-steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <span>✅ Your booking request has been submitted</span>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <span>⏳ Our team reviews and assigns your table</span>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <span>📞 We'll contact you on your phone to confirm</span>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <span>🪑 Arrive and enjoy your dining experience!</span>
+                </div>
+            </div>
+
+            <a href="/">Explore Menu</a>
+        </div>
+
+        {% else %}
+        <!-- ── BOOKING FORM ── -->
+        <h2>Make a Reservation</h2>
+        <p class="sub">Fill in the details and we'll confirm your table</p>
+
+        <form action="/booking/submit" method="POST">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="name" placeholder="Your name" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" name="phone" placeholder="+91 XXXXX XXXXX" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" name="time" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Number of Guests</label>
+                <select name="guests" required>
+                    <option value="">Select guests</option>
+                    <option value="1">1 Person</option>
+                    <option value="2">2 People</option>
+                    <option value="3">3 People</option>
+                    <option value="4">4 People</option>
+                    <option value="5">5 People</option>
+                    <option value="6">6 People</option>
+                    <option value="7+">7+ People</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Special Requests (Optional)</label>
+                <textarea name="requests" placeholder="Any dietary requirements, occasion, or special requests..."></textarea>
+            </div>
+            <button type="submit" class="booking-submit">Send Reservation Request</button>
+        </form>
+        {% endif %}
+
+    </div>
+</div>
+
+</body>
+</html>

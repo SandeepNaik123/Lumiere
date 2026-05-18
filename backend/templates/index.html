@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lumière</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="login-modal">
+    <div class="login-modal-content">
+        <button class="login-modal-close" onclick="closeLoginModal()">✕</button>
+        <div class="login-modal-logo">
+            <svg viewBox="0 0 50 70" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:50px">
+                <path d="M25 3 C25 3 22 7 22 10 C22 13 25 15 25 15 C25 15 28 13 28 10 C28 7 25 3 25 3Z" fill="#c8a96a"/>
+                <path d="M23 2 C21 5 20 8 21 11 C21.5 13 23 14 24 15" stroke="#c8a96a" stroke-width="1" fill="none" stroke-linecap="round"/>
+                <path d="M27 2 C29 5 30 8 29 11 C28.5 13 27 14 26 15" stroke="#c8a96a" stroke-width="1" fill="none" stroke-linecap="round"/>
+                <line x1="25" y1="15" x2="25" y2="50" stroke="#c8a96a" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M25 50 C16 50 6 54 6 54 C11 52 18 51 25 52" stroke="#c8a96a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <path d="M25 50 Q36 47 46 54 C41 51 33 51 25 52" stroke="#c8a96a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <path d="M46 54 C50 56 50 60 46 61 C42 62 38 59 40 56" stroke="#c8a96a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+            </svg>
+            <span class="logo-text">Lumière</span>
+        </div>
+        <div class="login-tabs">
+            <button class="login-tab active" onclick="switchTab('login')">Sign In</button>
+            <button class="login-tab" onclick="switchTab('register')">Register</button>
+        </div>
+        <div id="loginForm">
+            <input type="text" placeholder="Phone or Email" class="login-input">
+            <input type="password" placeholder="Password" class="login-input">
+            <button class="login-submit" onclick="handleLogin()">Sign In</button>
+            <p class="login-hint">Sign in to order food for delivery or dine-in</p>
+        </div>
+        <div id="registerForm" style="display:none">
+            <input type="text" placeholder="Full Name" class="login-input">
+            <input type="text" placeholder="Phone Number" class="login-input">
+            <input type="email" placeholder="Email" class="login-input">
+            <input type="password" placeholder="Password" class="login-input">
+            <button class="login-submit" onclick="handleRegister()">Create Account</button>
+        </div>
+    </div>
+</div>
+<div class="login-modal-overlay" id="loginModalOverlay" onclick="closeLoginModal()"></div>
+
+<!-- DELIVERY ADDRESS MODAL -->
+<div id="deliveryModal" class="login-modal delivery-modal">
+    <div class="login-modal-content">
+        <button class="login-modal-close" onclick="closeDeliveryModal()">✕</button>
+        <div class="login-modal-logo">
+            <svg viewBox="0 0 50 70" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:28px;height:40px">
+                <path d="M25 3 C25 3 22 7 22 10 C22 13 25 15 25 15 C25 15 28 13 28 10 C28 7 25 3 25 3Z" fill="#c8a96a"/>
+                <line x1="25" y1="15" x2="25" y2="50" stroke="#c8a96a" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M25 50 C16 50 6 54 6 54 C11 52 18 51 25 52" stroke="#c8a96a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <path d="M25 50 Q36 47 46 54 C41 51 33 51 25 52" stroke="#c8a96a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            </svg>
+            <span class="logo-text">Lumière</span>
+        </div>
+        <h3 style="color:#c8a96a;font-family:'Cormorant Garamond',serif;font-size:22px;text-align:center;margin-bottom:6px;letter-spacing:1px;">Delivery Address</h3>
+        <p style="color:#555;font-size:12px;text-align:center;margin-bottom:20px;letter-spacing:0.3px;">Where should we deliver your order?</p>
+
+        <button onclick="getGPSLocation()" id="gpsBtn" class="gps-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" stroke-dasharray="2 2"/></svg>
+            Use My Current Location
+        </button>
+        <div id="gpsStatus" class="gps-status"></div>
+
+        <div class="modal-divider">
+            <span class="modal-divider-line"></span>
+            <span class="modal-divider-text">or enter manually</span>
+            <span class="modal-divider-line"></span>
+        </div>
+
+        <input type="text" id="deliveryFlat" placeholder="Flat / House No. / Floor" class="login-input">
+        <input type="text" id="deliveryArea" placeholder="Area / Street / Locality" class="login-input">
+        <input type="text" id="deliveryCity" placeholder="City" class="login-input">
+        <input type="text" id="deliveryPin" placeholder="Pincode" class="login-input" style="margin-bottom:6px">
+
+        <div class="address-type-row">
+            <button onclick="saveDeliveryAddress('home')" class="addr-type-btn">🏠 Home</button>
+            <button onclick="saveDeliveryAddress('work')" class="addr-type-btn">💼 Work</button>
+            <button onclick="saveDeliveryAddress('other')" class="addr-type-btn">📍 Other</button>
+        </div>
+    </div>
+</div>
+<div class="login-modal-overlay" id="deliveryModalOverlay" onclick="closeDeliveryModal()"></div>
+
+<!-- FIXED NAVBAR -->
+<nav class="landing-nav" id="landingNav">
+    <div class="landing-nav-left">
+        <a class="landing-nav-logo" href="/?table={{ table }}">
+            <svg class="logo-svg" viewBox="0 0 50 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M25 3 C25 3 22 7 22 10 C22 13 25 15 25 15 C25 15 28 13 28 10 C28 7 25 3 25 3Z" fill="#c8a96a"/>
+                <path d="M23 2 C21 5 20 8 21 11 C21.5 13 23 14 24 15" stroke="#c8a96a" stroke-width="1" fill="none" stroke-linecap="round"/>
+                <path d="M27 2 C29 5 30 8 29 11 C28.5 13 27 14 26 15" stroke="#c8a96a" stroke-width="1" fill="none" stroke-linecap="round"/>
+                <line x1="25" y1="15" x2="25" y2="50" stroke="#c8a96a" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M25 50 C16 50 6 54 6 54 C11 52 18 51 25 52" stroke="#c8a96a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <path d="M25 50 Q36 47 46 54 C41 51 33 51 25 52" stroke="#c8a96a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <path d="M46 54 C50 56 50 60 46 61 C42 62 38 59 40 56" stroke="#c8a96a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+            </svg>
+            <span class="logo-text">Lumière</span>
+        </a>
+
+        {% if table %}
+        <div class="nav-table-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c8a96a" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Table {{ table }}
+        </div>
+        {% endif %}
+
+        <button class="nav-deliver-btn" onclick="openDeliveryModal()" id="navDeliverBtn" title="Order for Home Delivery">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 3h15l-1.68 8.39a2 2 0 0 1-2 1.61H5.24a2 2 0 0 1-2-1.61L2 6h19"/>
+                <circle cx="9" cy="20" r="1"/><circle cx="20" cy="20" r="1"/>
+            </svg>
+            <div class="nav-deliver-text">
+                <span class="deliver-label">Delivery</span>
+                <span class="deliver-value" id="deliverValueNav">Order for Home ▾</span>
+            </div>
+        </button>
+    </div>
+
+    <div class="landing-nav-right">
+        <div class="landing-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8a96a" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" placeholder="Search dishes..." id="landingSearchInput" onkeyup="searchFood(this.value)">
+        </div>
+        <label class="veg-toggle">
+            <span class="veg-toggle-label">Veg Only</span>
+            <div class="veg-switch">
+                <input type="checkbox" id="vegToggle" onchange="toggleVeg(this.checked)">
+                <span class="veg-slider"></span>
+            </div>
+        </label>
+        <div class="nav-profile-wrap">
+            <button class="nav-profile-btn" onclick="toggleProfileMenu('profileDropdown')" aria-label="Profile">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/></svg>
+            </button>
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="profile-dropdown-header">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#c8a96a" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/></svg>
+                    <span id="profileName">Guest</span>
+                </div>
+                <div class="profile-dropdown-links" id="guestLinks">
+                    <button onclick="openLoginModal('login')" class="pd-link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>Sign In
+                    </button>
+                    <button onclick="openLoginModal('register')" class="pd-link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Register
+                    </button>
+                </div>
+                <div class="profile-dropdown-links" id="userLinks" style="display:none">
+                    <button class="pd-link" onclick="openDeliveryModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15l-1.68 8.39a2 2 0 0 1-2 1.61H5.24a2 2 0 0 1-2-1.61L2 6h19"/><circle cx="9" cy="20" r="1"/><circle cx="20" cy="20" r="1"/></svg>
+                        Order for Delivery
+                    </button>
+                    <button class="pd-link" onclick="openDineInConfirm()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                        Dine In
+                    </button>
+                    <button class="pd-link" onclick="doLogout()"><span style="color:#ef4444">Sign Out</span></button>
+                </div>
+            </div>
+        </div>
+        <button class="nav-cart-btn" onclick="openCart()" title="View Cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            <span class="nav-cart-badge" id="navCartBadge" style="display:none">0</span>
+        </button>
+    </div>
+    <button class="landing-hamburger" onclick="toggleLandingMenu()" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="landing-mobile-menu" id="landingMobileMenu">
+        <input type="text" class="mobile-landing-search" placeholder="Search dishes..." onkeyup="searchFood(this.value)">
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+    <div class="overlay">
+        <div class="hero-badge">Est. 2024</div>
+        <p class="hero-sub">Welcome to</p>
+        <h1>Lumière</h1>
+        <div class="hero-divider">
+            <span class="divider-line"></span>
+            <span class="divider-icon">✦</span>
+            <span class="divider-line"></span>
+        </div>
+        <p class="hero-tagline">INDULGE IN REGAL CUISINE</p>
+        <div class="hero-btns">
+            <a href="#todays-special" class="explore-btn">
+                Explore Menu
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="/booking" class="book-btn">Book a Table</a>
+        </div>
+        <div class="hero-cards">
+            <div class="hero-card"><span>🌿</span><p>Fresh Daily</p></div>
+            <div class="hero-card"><span>👨‍🍳</span><p>Chef's Special</p></div>
+            <div class="hero-card"><span>⭐</span><p>Premium Quality</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- TODAY'S SPECIAL SLIDER -->
+{% if featured_items %}
+<section class="ts-section" id="todays-special">
+    <div class="ts-header">
+        <div class="ts-eyebrow">Today's Special</div>
+        <h2 class="ts-title">Chef's <span>Picks</span></h2>
+        <div class="ts-nav">
+            <button class="ts-arrow" id="tsPrev" onclick="tsSlide(-1)">←</button>
+            <button class="ts-arrow" id="tsNext" onclick="tsSlide(1)">→</button>
+        </div>
+    </div>
+    <div class="ts-dots" id="tsDots"></div>
+    <div class="ts-viewport">
+        <div class="ts-cards-track" id="tsCardsTrack">
+            {% for item in featured_items %}
+            <div class="ts-card">
+                {% if item[6] %}
+                <img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}" loading="lazy">
+                {% else %}
+                <div class="ts-card-placeholder">🍽️</div>
+                {% endif %}
+                <div class="ts-card-overlay"></div>
+                <div class="ts-card-info">
+                    <div class="ts-card-name">{{ item[1] }}</div>
+                    <div class="ts-card-bottom">
+                        <span class="ts-card-price">₹{{ item[2] }}</span>
+                        <span class="ts-card-badge {{ 'veg' if item[4] in ['veg','dessert'] else 'nonveg' }}">
+                            {{ 'Veg' if item[4] in ['veg','dessert'] else 'Non-Veg' }}
+                        </span>
+                    </div>
+                </div>
+                <button class="ts-card-add"
+                    onclick="increase('{{ item[1] }}', {{ item[2] }}); event.stopPropagation()">+</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="ts-progress"><div class="ts-progress-fill" id="tsProgressFill"></div></div>
+</section>
+{% endif %}
+
+<!-- STICKY NAVBAR (hidden via CSS) -->
+<nav class="navbar" id="stickyNav"></nav>
+
+<!-- BOTTOM FLOATING MENU — Special and Combo removed -->
+<div class="bottom-menu-bar" id="floatMenuBtn">
+    <div class="bm-categories" id="bmCategories">
+        <button class="bm-cat active" onclick="drawerFilter('all')" id="bmc-all"><span class="bm-cat-icon">🍽️</span><span>All</span></button>
+        <button class="bm-cat" onclick="drawerFilter('starter')" id="bmc-starter"><span class="bm-cat-icon">🥗</span><span>Starter</span></button>
+        <button class="bm-cat" onclick="drawerFilter('maincourse')" id="bmc-maincourse"><span class="bm-cat-icon">🍛</span><span>Main Course</span></button>
+        <button class="bm-cat" onclick="drawerFilter('desserts')" id="bmc-desserts"><span class="bm-cat-icon">🍮</span><span>Desserts</span></button>
+        <button class="bm-cat" onclick="drawerFilter('beverages')" id="bmc-beverages"><span class="bm-cat-icon">🥤</span><span>Drinks</span></button>
+    </div>
+    <button class="bm-pill" onclick="toggleBottomMenu()">
+        <div class="bm-icon"><span></span><span></span><span></span></div>
+        <span class="bm-label">Menu</span>
+    </button>
+</div>
+
+<!-- MAIN MENU — Special and Combo sections removed -->
+<div class="container" id="menu-section">
+    <div class="menu">
+
+        <!-- STARTERS -->
+        <div class="section" id="section-starter">
+            <h2 class="subheading">Starter — Veg</h2>
+            <div class="item-groups" id="group-starter-veg">
+            {% for item in items %}{% if item[3] == 'starter' and item[4] == 'veg' %}
+            <div class="item" data-category="starter" data-type="veg" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot veg"></span><span>Veg</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+
+            <h2 class="subheading">Starter — Non-Veg</h2>
+            <div class="item-groups" id="group-starter-nonveg">
+            {% for item in items %}{% if item[3] == 'starter' and item[4] == 'nonveg' %}
+            <div class="item" data-category="starter" data-type="nonveg" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot nonveg"></span><span>Non-Veg</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+        </div>
+
+        <!-- MAIN COURSE -->
+        <div class="section" id="section-maincourse">
+            <h2 class="subheading">Main Course — Veg</h2>
+            <div class="item-groups">
+            {% for item in items %}{% if item[3] == 'maincourse' and item[4] == 'veg' %}
+            <div class="item" data-category="maincourse" data-type="veg" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot veg"></span><span>Veg</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+
+            <h2 class="subheading">Main Course — Non-Veg</h2>
+            <div class="item-groups">
+            {% for item in items %}{% if item[3] == 'maincourse' and item[4] == 'nonveg' %}
+            <div class="item" data-category="maincourse" data-type="nonveg" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot nonveg"></span><span>Non-Veg</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+        </div>
+
+        <!-- DESSERTS -->
+        <div class="section" id="section-desserts">
+            <h2 class="subheading">Desserts</h2>
+            <div class="item-groups">
+            {% for item in items %}{% if item[3] == 'desserts' %}
+            <div class="item" data-category="desserts" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot {{ 'veg' if item[4] == 'veg' else 'nonveg' }}"></span><span>{{ 'Veg' if item[4] == 'veg' else 'Non-Veg' }}</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+        </div>
+
+        <!-- BEVERAGES -->
+        <div class="section" id="section-beverages">
+            <h2 class="subheading">Hot Drinks</h2>
+            <div class="item-groups">
+            {% for item in items %}{% if item[3] == 'beverages' and item[4] == 'hotdrinks' %}
+            <div class="item" data-category="beverages" data-type="hotdrinks" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot veg"></span><span>Veg</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+
+            <h2 class="subheading">Cold Drinks</h2>
+            <div class="item-groups">
+            {% for item in items %}{% if item[3] == 'beverages' and item[4] == 'colddrinks' %}
+            <div class="item" data-category="beverages" data-type="colddrinks" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot veg"></span><span>Veg</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+
+            <h2 class="subheading">Juices</h2>
+            <div class="item-groups">
+            {% for item in items %}{% if item[3] == 'beverages' and item[4] == 'juices' %}
+            <div class="item" data-category="beverages" data-type="juices" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot veg"></span><span>Veg</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+
+            <h2 class="subheading">Milkshakes</h2>
+            <div class="item-groups">
+            {% for item in items %}{% if item[3] == 'beverages' and item[4] == 'milkshakes' %}
+            <div class="item" data-category="beverages" data-type="milkshakes" onclick="toggleExpand(this)">
+                {% if item[6] %}<img src="{{ url_for('static', filename='uploads/' + item[6]) }}" alt="{{ item[1] }}">
+                {% else %}<div class="item-img-placeholder">🍽️</div>{% endif %}
+                <div class="item-type-badge"><span class="type-dot veg"></span><span>Veg</span></div>
+                <h3>{{ item[1] }}</h3>
+                {% if item[8] %}<p class="item-desc">{{ item[8] }}</p>{% endif %}
+                <p class="item-price">₹{{ item[2] }}</p>
+                <div class="controls">
+                    <button onclick="decrease('{{ item[1] }}')">−</button>
+                    <span id="qty-{{ item[1] }}">0</span>
+                    <button onclick="increase('{{ item[1] }}', {{ item[2] }})">+</button>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ORDER SUMMARY PANEL -->
+    <div class="summary">
+        <h3>🪑 Table {{ table }} — Order Summary</h3>
+        <div id="orders" class="cart-items"></div>
+        <div class="cart-total-row">
+            <span>Total</span>
+            <span>₹<span id="total">0</span></span>
+        </div>
+        <textarea
+            id="orderNote"
+            placeholder="Special instructions? (optional)"
+            rows="2"
+            style="width:100%;margin:10px 0 0;padding:10px 12px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#ccc;font-family:inherit;font-size:12px;resize:none;outline:none;transition:border-color .2s;"
+            onfocus="this.style.borderColor='#c8a96a'"
+            onblur="this.style.borderColor='#2a2a2a'"
+        ></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+            <button onclick="clearCart()" class="danger-btn" style="flex:1;">Cancel All</button>
+            <button onclick="placeOrder()" class="place" style="flex:2;">Place Order</button>
+        </div>
+        <div style="border-top:1px solid #1e1e1e;margin:14px 0 10px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:10px;color:#444;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">Done eating?</span>
+            <span style="flex:1;height:1px;background:#1e1e1e;"></span>
+        </div>
+        <button
+            onclick="requestBill()"
+            id="requestBillBtn"
+            style="width:100%;padding:11px;background:transparent;border:1px solid #2a2a2a;border-radius:8px;color:#c8a96a;font-size:13px;font-family:inherit;cursor:pointer;letter-spacing:.3px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;"
+            onmouseover="this.style.background='#1a1a1a';this.style.borderColor='#c8a96a';"
+            onmouseout="this.style.background='transparent';this.style.borderColor='#2a2a2a';">
+            🧾 Request Bill
+        </button>
+
+        <!-- Bill display area — shown when admin sends bill -->
+        <div id="billDisplayArea" style="display:none;margin-top:14px;background:#111;border:1px solid #c8a96a33;border-radius:10px;padding:14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <span style="font-size:18px;">🧾</span>
+                <span style="color:#c8a96a;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;letter-spacing:.5px;">Your Bill</span>
+            </div>
+            <div id="billDisplayItems" style="font-size:12px;color:#aaa;"></div>
+            <div style="border-top:1px dashed #333;margin:10px 0;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;color:#888;">Total Amount</span>
+                <span id="billDisplayTotal" style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#c8a96a;font-weight:700;"></span>
+            </div>
+            <p style="font-size:11px;color:#555;text-align:center;margin-top:10px;">Please pay at the counter. Thank you! 🙏</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="site-footer" id="contact">
+    <div class="footer-grid">
+        <div class="footer-brand footer-about-text">
+            <div class="footer-logo">
+                <svg viewBox="0 0 50 70" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:34px;flex-shrink:0">
+                    <path d="M25 3 C25 3 22 7 22 10 C22 13 25 15 25 15 C25 15 28 13 28 10 C28 7 25 3 25 3Z" fill="#c8a96a"/>
+                    <line x1="25" y1="15" x2="25" y2="50" stroke="#c8a96a" stroke-width="2.5" stroke-linecap="round"/>
+                    <path d="M25 50 C16 50 6 54 6 54 C11 52 18 51 25 52" stroke="#c8a96a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                    <path d="M25 50 Q36 47 46 54 C41 51 33 51 25 52" stroke="#c8a96a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                </svg>
+                <span class="logo-text">Lumière</span>
+            </div>
+            <p>At Lumière, we believe dining is more than a meal — it's an experience.</p>
+            <div class="about-stats-footer">
+                <div class="stat"><span class="stat-num">50+</span><span class="stat-label">Dishes</span></div>
+                <div class="stat"><span class="stat-num">5★</span><span class="stat-label">Rating</span></div>
+                <div class="stat"><span class="stat-num">10K+</span><span class="stat-label">Guests</span></div>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="/?table={{ table }}">Home</a></li>
+                <li><a href="#menu-section">Menu</a></li>
+                <li><a href="/booking">Book a Table</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Menu</h4>
+            <ul>
+                <li><a href="#section-starter">Starter</a></li>
+                <li><a href="#section-maincourse">Main Course</a></li>
+                <li><a href="#section-desserts">Desserts</a></li>
+                <li><a href="#section-beverages">Beverages</a></li>
+            </ul>
+        </div>
+        <div class="footer-col footer-contact">
+            <h4>Contact Us</h4>
+            <p><span>📍</span><span>123 Royal Street, Food City</span></p>
+            <p><span>📞</span><span>+91 98765 43210</span></p>
+            <p><span>✉️</span><span>hello@lumiere.com</span></p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2024 Lumière. All rights reserved.</p>
+        <p>Crafted with ❤️</p>
+    </div>
+</footer>
+
+<div class="cart-bar">
+    <span id="cart-count">0 Items</span>
+    <span>₹<span id="cart-total">0</span></span>
+    <button onclick="openCart()" class="cart-bar-btn">🛒 View Cart</button>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+<!-- Bill polling script — only runs for dine-in (table param present) -->
+{% if table %}
+<script>
+(function() {
+    var table = '{{ table }}';
+    var billShown = false;
+
+    function pollBill() {
+        if (billShown) return;
+        fetch('/get-bill?table=' + encodeURIComponent(table))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (data.bill) {
+                showBillInSummary(data.bill);
+                billShown = true;
+            }
+        })
+        .catch(function(){});
+    }
+
+    function showBillInSummary(bill) {
+        var area = document.getElementById('billDisplayArea');
+        var itemsEl = document.getElementById('billDisplayItems');
+        var totalEl = document.getElementById('billDisplayTotal');
+        if (!area || !itemsEl || !totalEl) return;
+
+        var itemsHtml = bill.items.map(function(i){
+            return '<div style="display:flex;justify-content:space-between;padding:3px 0;">' +
+                '<span>' + i.name + ' ×' + i.qty + '</span>' +
+                '<span style="color:#c8a96a;">₹' + i.subtotal + '</span>' +
+                '</div>';
+        }).join('');
+
+        itemsEl.innerHTML = itemsHtml;
+        totalEl.textContent = '₹' + bill.total;
+        area.style.display = 'block';
+
+        // Scroll the summary panel to show the bill
+        area.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Also open the cart panel if on mobile so user sees the bill
+        var summary = document.querySelector('.summary');
+        if (summary && window.innerWidth <= 900) {
+            summary.style.display = 'block';
+            setTimeout(function(){ summary.classList.add('active'); }, 10);
+        }
+    }
+
+    // Poll every 6 seconds
+    setInterval(pollBill, 6000);
+    pollBill();
+})();
+</script>
+{% endif %}
+
+</body>
+</html>

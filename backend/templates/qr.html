@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Codes — Lumière Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* ── CONTROLS ── */
+        .qr-top-controls {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            align-items: flex-end;
+        }
+        .qr-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .qr-form-group label {
+            font-size: 11px;
+            color: #c8a96a;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .qr-form-group input {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #374151;
+            background: #1f2937;
+            color: white;
+            font-size: 14px;
+            width: 130px;
+            outline: none;
+            font-family: 'Lato', sans-serif;
+        }
+        .qr-form-group input:focus { border-color: #c8a96a; }
+        .btn-gold {
+            padding: 10px 22px;
+            background: #c8a96a;
+            border: none; border-radius: 8px;
+            color: black; font-weight: bold;
+            cursor: pointer; font-size: 13px;
+            transition: background 0.2s;
+            font-family: 'Lato', sans-serif;
+        }
+        .btn-gold:hover { background: #dfc080; }
+        .btn-blue {
+            padding: 10px 22px;
+            background: #1d4ed8;
+            border: none; border-radius: 8px;
+            color: white; font-weight: bold;
+            cursor: pointer; font-size: 13px;
+            transition: background 0.2s;
+            font-family: 'Lato', sans-serif;
+        }
+        .btn-blue:hover { background: #2563eb; }
+        .divider-v {
+            width: 1px;
+            height: 44px;
+            background: #c8a96a22;
+            align-self: flex-end;
+        }
+
+        /* ── QR GRID ── */
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 20px;
+        }
+        .qr-item {
+            background: #1a2035;
+            border: 1px solid #c8a96a33;
+            border-radius: 12px;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: border-color 0.2s;
+            position: relative;
+        }
+        .qr-item:hover { border-color: #c8a96a66; }
+
+        /* delete button top right */
+        .qr-delete-btn {
+            position: absolute;
+            top: 10px; right: 10px;
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: #7f1d1d;
+            color: #fca5a5;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+        .qr-delete-btn:hover { background: #991b1b; }
+
+        .qr-table-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 17px;
+            color: #c8a96a;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .qr-code-wrap {
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qr-url {
+            font-size: 9px;
+            color: #555;
+            text-align: center;
+            word-break: break-all;
+            letter-spacing: 0.3px;
+            max-width: 170px;
+        }
+        .qr-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .qr-print-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid #c8a96a55;
+            border-radius: 6px;
+            color: #c8a96a;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            font-family: 'Lato', sans-serif;
+        }
+        .qr-print-btn:hover { background: #c8a96a18; border-color: #c8a96a; }
+
+        /* empty state */
+        .qr-empty {
+            text-align: center;
+            padding: 50px 20px;
+            color: #555;
+            font-size: 14px;
+            grid-column: 1 / -1;
+        }
+        .qr-empty span { font-size: 40px; display: block; margin-bottom: 12px; }
+
+        /* ── PRINT STYLES ── */
+        @media print {
+            .admin-header,
+            .qr-top-controls,
+            .qr-print-btn,
+            .qr-delete-btn,
+            .qr-actions { display: none !important; }
+            .admin-wrapper { padding: 0; }
+            .admin-card { border: none; background: white; padding: 0; box-shadow: none; }
+            .admin-card h2 { display: none; }
+            .qr-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+            .qr-item {
+                background: white !important;
+                border: 1px solid #ccc !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .qr-table-label { color: #000 !important; }
+            .qr-url { color: #666 !important; display: block !important; }
+            body { background: white !important; color: black !important; }
+            .qr-code-wrap img,
+            .qr-code-wrap canvas { display: block !important; visibility: visible !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="admin-wrapper">
+
+    <div class="admin-header">
+        <h1>🪑 Table QR Codes</h1>
+        <a href="/admin" class="view-btn">← Back to Admin</a>
+    </div>
+
+    <div class="admin-card">
+        <h2>Manage Tables</h2>
+
+        <div class="qr-top-controls">
+
+            <!-- Add single table -->
+            <form action="/admin/qr/add" method="POST" style="display:flex; gap:10px; align-items:flex-end;">
+                <div class="qr-form-group">
+                    <label>Add Single Table</label>
+                    <input type="number" name="table_number" placeholder="e.g. 7" min="1" required>
+                </div>
+                <button type="submit" class="btn-gold">+ Add Table</button>
+            </form>
+
+            <div class="divider-v"></div>
+
+            <!-- Add bulk tables -->
+            <form action="/admin/qr/add-bulk" method="POST" style="display:flex; gap:10px; align-items:flex-end;">
+                <div class="qr-form-group">
+                    <label>Bulk Add (1 to N)</label>
+                    <input type="number" name="count" placeholder="e.g. 10" min="1" max="100" required>
+                </div>
+                <button type="submit" class="btn-gold">Generate All</button>
+            </form>
+
+            <div class="divider-v"></div>
+
+            <!-- Print all -->
+            <button class="btn-blue" onclick="window.print()" style="align-self:flex-end;">🖨️ Print All</button>
+        </div>
+
+        <!-- QR Grid -->
+        <div class="qr-grid" id="qrGrid">
+            {% if tables %}
+                {% for t in tables %}
+                <div class="qr-item" id="qr-item-{{ t[1] }}">
+                    <!-- Delete button -->
+                    <a href="/admin/qr/delete/{{ t[0] }}"
+                       class="qr-delete-btn"
+                       onclick="return confirm('Delete Table {{ t[1] }}?')"
+                       title="Delete Table {{ t[1] }}">✕</a>
+
+                    <div class="qr-table-label">🪑 Table {{ t[1] }}</div>
+
+                    <!-- QR code renders here -->
+                    <div class="qr-code-wrap" id="qr-{{ t[1] }}"></div>
+
+                    <div class="qr-url">{{ base_url }}/?table={{ t[1] }}</div>
+
+                    <div class="qr-actions">
+                        <button class="qr-print-btn" onclick="printOne({{ t[1] }})">🖨️ Print</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="qr-empty">
+                    <span>🪑</span>
+                    No tables yet. Add tables above to generate QR codes.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+    var BASE_URL = "{{ base_url }}";
+
+    // Generate QR codes for all tables on page load
+    window.onload = function() {
+        {% for t in tables %}
+        (function() {
+            var tableNum = {{ t[1] }};
+            var url = BASE_URL + '/?table=' + tableNum;
+            new QRCode(document.getElementById('qr-' + tableNum), {
+                text: url,
+                width: 150,
+                height: 150,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        })();
+        {% endfor %}
+    };
+
+    // Print single table QR
+    function printOne(tableNum) {
+        var url = BASE_URL + '/?table=' + tableNum;
+        var printWin = window.open('', '_blank', 'width=400,height=500');
+        printWin.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Table ${tableNum} — Lumière</title>
+                <style>
+                    * { margin:0; padding:0; box-sizing:border-box; }
+                    body {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        font-family: Georgia, serif;
+                        background: white;
+                    }
+                    .card {
+                        text-align: center;
+                        padding: 36px 40px;
+                        border: 2px solid #c8a96a;
+                        border-radius: 16px;
+                        max-width: 280px;
+                    }
+                    .restaurant { font-size: 22px; color: #333; margin-bottom: 4px; }
+                    .table-num { font-size: 17px; color: #c8a96a; margin-bottom: 18px; letter-spacing: 1px; }
+                    #qr-print { display: flex; justify-content: center; margin-bottom: 14px; }
+                    #qr-print img { display: block !important; }
+                    .scan-text { font-size: 11px; color: #888; letter-spacing: 0.5px; }
+                </style>
+            </head>
+            <body>
+            <div class="card">
+                <div class="restaurant">🍽️ Lumière</div>
+                <div class="table-num">Table ${tableNum}</div>
+                <div id="qr-print"></div>
+                <div class="scan-text">Scan to view menu &amp; order</div>
+            </div>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+            <script>
+                new QRCode(document.getElementById('qr-print'), {
+                    text: '${url}',
+                    width: 200,
+                    height: 200,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                // wait for QR to render then print
+                setTimeout(function() {
+                    window.print();
+                }, 1500);
+            <\/script>
+            </body>
+            </html>
+        `);
+        printWin.document.close();
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lumière Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+<div class="admin-wrapper">
+
+    <div class="admin-header">
+        <h1>🍴 Lumière Admin</h1>
+        <div style="display:flex; gap:10px;">
+            <a href="/admin/qr" class="qr-btn">🪑 QR Codes</a>
+            <a href="/" class="view-btn">View Menu</a>
+        </div>
+    </div>
+
+    <!-- ADD ITEM FORM -->
+    <div class="admin-card">
+        <h2>Add New Item</h2>
+        <form action="/admin/add" method="POST" enctype="multipart/form-data" class="add-form">
+            <input type="text" name="name" placeholder="Item Name" required>
+            <input type="number" name="price" placeholder="Price (₹)" required>
+            <select name="category" id="categorySelect" onchange="updateTypes()" required>
+                <option value="">Select Category</option>
+                <option value="starter">Starter</option>
+                <option value="maincourse">Main Course</option>
+                <option value="desserts">Desserts</option>
+                <option value="beverages">Beverages</option>
+            </select>
+            <select name="type" id="typeSelect" required>
+                <option value="">Select Type</option>
+            </select>
+            <textarea name="description" placeholder="Item description (optional) — e.g. Crispy golden fried chicken with house spice blend" class="desc-textarea"></textarea>
+            <div class="file-upload-group">
+                <label class="file-label">📷 Upload Image (optional)</label>
+                <input type="file" name="image" accept="image/*" class="file-input">
+            </div>
+            <button type="submit">Add Item</button>
+        </form>
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <div class="admin-card">
+        <h2>All Items</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Special</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in items %}
+            <tr class="{{ 'unavailable-row' if item[5] == 'unavailable' }}">
+                <td>{{ item[0] }}</td>
+                <td>
+                    {% if item[6] %}
+                    <img src="{{ url_for('static', filename='uploads/' + item[6]) }}"
+                         style="width:48px;height:48px;object-fit:cover;border-radius:8px;">
+                    {% else %}
+                    <span style="font-size:24px;">🍽️</span>
+                    {% endif %}
+                </td>
+                <td>{{ item[1] }}</td>
+                <td>
+                    {% if item[8] %}
+                    <span style="color:#aaa; font-size:12px;">{{ item[8][:60] }}{% if item[8]|length > 60 %}…{% endif %}</span>
+                    {% else %}
+                    <span style="color:#444; font-size:12px;">—</span>
+                    {% endif %}
+                </td>
+                <td>₹{{ item[2] }}</td>
+                <td>{{ item[3] }}</td>
+                <td>{{ item[4] }}</td>
+                <td>
+                    <span class="badge {{ 'badge-out' if item[5] == 'unavailable' else 'badge-in' }}">
+                        {{ item[5] }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge {{ 'badge-featured' if item[7] == 1 else 'badge-normal' }}">
+                        {{ '⭐ Featured' if item[7] == 1 else 'Normal' }}
+                    </span>
+                </td>
+                <td class="actions">
+                    <a href="/admin/edit/{{ item[0] }}" class="btn-edit">Edit</a>
+                    <a href="/admin/toggle/{{ item[0] }}" class="btn-toggle">
+                        {{ 'Mark Available' if item[5] == 'unavailable' else 'Out of Stock' }}
+                    </a>
+                    <a href="/admin/feature/{{ item[0] }}" class="btn-feature">
+                        {{ '★ Unfeature' if item[7] == 1 else '⭐ Feature' }}
+                    </a>
+                    <a href="/admin/delete/{{ item[0] }}" class="btn-delete"
+                       onclick="return confirm('Delete {{ item[1] }}?')">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- BOOKINGS TABLE -->
+    <div class="admin-card">
+        <h2>📅 Table Bookings</h2>
+        {% if bookings %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Guests</th>
+                    <th>Requests</th>
+                    <th>Status</th>
+                    <th>Table</th>
+                    <th>Booked At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for b in bookings %}
+            <tr class="
+                {% if b[8] == 'confirmed' %}booking-confirmed{% endif %}
+                {% if b[8] == 'rejected' %}booking-rejected{% endif %}
+            ">
+                <td>{{ b[0] }}</td>
+                <td><strong>{{ b[1] }}</strong></td>
+                <td>{{ b[2] }}</td>
+                <td>{{ b[3] }}</td>
+                <td>{{ b[4] }}</td>
+                <td>{{ b[5] }} guests</td>
+                <td>{{ b[6] or '—' }}</td>
+                <td>
+                    <span class="badge
+                        {% if b[8] == 'confirmed' %}badge-confirmed
+                        {% elif b[8] == 'rejected' %}badge-rejected
+                        {% else %}badge-pending{% endif %}">
+                        {% if b[8] == 'confirmed' %}✅ Confirmed
+                        {% elif b[8] == 'rejected' %}❌ Rejected
+                        {% else %}⏳ Pending{% endif %}
+                    </span>
+                </td>
+                <td>
+                    {% if b[9] %}
+                        <span style="color:#c8a96a; font-weight:bold;">Table {{ b[9] }}</span>
+                    {% else %}
+                        <span style="color:#555;">—</span>
+                    {% endif %}
+                </td>
+                <td>{{ b[7] }}</td>
+                <td class="actions">
+                    {% if b[8] == 'pending' %}
+                    <form action="/admin/booking/confirm/{{ b[0] }}" method="POST"
+                          style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                        <select name="assigned_table" class="table-select">
+                            <option value="">No table</option>
+                            {% for t in tables %}
+                            <option value="{{ t[1] }}">Table {{ t[1] }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-confirm">✅ Confirm</button>
+                    </form>
+                    <a href="/admin/booking/reject/{{ b[0] }}" class="btn-reject"
+                       onclick="return confirm('Reject this booking?')">❌ Reject</a>
+                    {% endif %}
+                    {% if b[8] == 'confirmed' %}
+                    <form action="/admin/booking/confirm/{{ b[0] }}" method="POST"
+                          style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                        <select name="assigned_table" class="table-select">
+                            <option value="">No table</option>
+                            {% for t in tables %}
+                            <option value="{{ t[1] }}" {{ 'selected' if b[9] == t[1] }}>Table {{ t[1] }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-edit" style="font-size:11px;">Reassign</button>
+                    </form>
+                    {% endif %}
+                    <a href="/admin/booking/delete/{{ b[0] }}" class="btn-delete"
+                       onclick="return confirm('Delete this booking?')">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#666; padding:20px 0;">No bookings yet.</p>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+const typeMap = {
+    starter:    ['veg', 'nonveg'],
+    maincourse: ['veg', 'nonveg'],
+    desserts:   ['dessert'],
+    beverages:  ['hotdrinks', 'colddrinks', 'juices', 'milkshakes']
+};
+function updateTypes() {
+    const cat = document.getElementById('categorySelect').value;
+    const sel = document.getElementById('typeSelect');
+    sel.innerHTML = '<option value="">Select Type</option>';
+    (typeMap[cat] || []).forEach(t => {
+        sel.innerHTML += `<option value="${t}">${t}</option>`;
+    });
+}
+</script>
+</body>
+</html>

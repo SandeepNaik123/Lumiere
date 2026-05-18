@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Item</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+<div class="admin-wrapper">
+
+    <div class="admin-header">
+        <h1>🍴 Edit Item</h1>
+        <a href="/admin" class="view-btn">Back to Admin</a>
+    </div>
+
+    <div class="admin-card">
+        <h2>Edit — {{ item[1] }}</h2>
+
+        {% if item[6] %}
+        <div style="margin-bottom: 16px;">
+            <p style="color:#888; font-size:12px; margin-bottom:8px; letter-spacing:1px; text-transform:uppercase;">Current Image</p>
+            <img src="{{ url_for('static', filename='uploads/' + item[6]) }}"
+                 style="width:100px;height:100px;object-fit:cover;border-radius:10px;border:1px solid #c8a96a44;">
+        </div>
+        {% endif %}
+
+        <form action="/admin/edit/{{ item[0] }}" method="POST" enctype="multipart/form-data" class="add-form">
+            <input type="text" name="name" value="{{ item[1] }}" placeholder="Item Name" required>
+            <input type="number" name="price" value="{{ item[2] }}" placeholder="Price (₹)" required>
+
+            <select name="category" id="editCategory" onchange="updateEditTypes()" required>
+                <option value="starter"    {{ 'selected' if item[3]=='starter' }}>Starter</option>
+                <option value="maincourse" {{ 'selected' if item[3]=='maincourse' }}>Main Course</option>
+                <option value="desserts"   {{ 'selected' if item[3]=='desserts' }}>Desserts</option>
+                <option value="beverages"  {{ 'selected' if item[3]=='beverages' }}>Beverages</option>
+            </select>
+
+            <select name="type" id="editType" required>
+                <option value="{{ item[4] }}" selected>{{ item[4] }}</option>
+            </select>
+
+            <!-- description -->
+            <textarea name="description" placeholder="Item description (optional)" class="desc-textarea">{{ item[8] or '' }}</textarea>
+
+            <!-- image upload -->
+            <div class="file-upload-group" style="width:100%;">
+                <label class="file-label">📷 Change Image (leave empty to keep current)</label>
+                <input type="file" name="image" accept="image/*" class="file-input">
+            </div>
+
+            <button type="submit">Save Changes</button>
+        </form>
+    </div>
+
+</div>
+
+<script>
+const typeMap = {
+    starter:    ['veg', 'nonveg'],
+    maincourse: ['veg', 'nonveg'],
+    desserts:   ['dessert'],
+    beverages:  ['hotdrinks', 'colddrinks', 'juices', 'milkshakes']
+};
+
+function updateEditTypes() {
+    const cat = document.getElementById('editCategory').value;
+    const sel = document.getElementById('editType');
+    const current = "{{ item[4] }}";
+    sel.innerHTML = '';
+    (typeMap[cat] || []).forEach(t => {
+        sel.innerHTML += `<option value="${t}" ${t === current ? 'selected' : ''}>${t}</option>`;
+    });
+}
+
+window.onload = function() { updateEditTypes(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lumière — Billing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0a0a0a; color: #eee; font-family: 'Lato', sans-serif; min-height: 100vh; }
+        .header { background: #111; border-bottom: 1px solid #222; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header h1 { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #c8a96a; letter-spacing: 1px; }
+        .billing-badge { background: #1a1a1a; border: 1px solid #333; color: #aaa; font-size: 11px; padding: 4px 10px; border-radius: 20px; letter-spacing: 1px; text-transform: uppercase; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .live-dot { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #aaa; }
+        .live-dot span { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)} }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-links a { background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; text-decoration: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; transition: all .2s; }
+        .nav-links a:hover { border-color: #c8a96a; color: #c8a96a; }
+        .main { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+        .stats-bar { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-pill { background: #111; border: 1px solid #222; border-radius: 10px; padding: 12px 20px; }
+        .stat-pill .num { font-size: 22px; font-weight: 700; color: #c8a96a; font-family: 'Cormorant Garamond', serif; }
+        .stat-pill .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: .8px; }
+        .section-title { font-family: 'Cormorant Garamond', serif; font-size: 16px; color: #c8a96a; letter-spacing: 1px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 8px; }
+        .section-wrap { margin-bottom: 32px; }
+        .empty-section { color: #444; font-size: 13px; padding: 16px 0; }
+        .today-note { font-size: 11px; color: #444; margin-left: auto; font-family: 'Lato', sans-serif; letter-spacing: 0; font-weight: 300; }
+        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .order-card { background: #111; border: 1px solid #222; border-radius: 14px; overflow: hidden; }
+        .order-card.bill_requested { border-left: 3px solid #f59e0b; }
+        .order-card.delivered      { border-left: 3px solid #22c55e; }
+        .order-card.pending,.order-card.preparing,.order-card.ready { border-left: 3px solid #3b82f6; }
+        .order-card.billed         { border-left: 3px solid #555; opacity: .7; }
+        .order-card.delivery-card  { background: #0d1525; }
+        .order-card-header { padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1a1a1a; }
+        .order-id { font-family: 'Cormorant Garamond', serif; font-size: 17px; color: #c8a96a; font-weight: 600; }
+        .table-chip { background: #1a1a1a; border: 1px solid #2a2a2a; color: #eee; font-size: 12px; padding: 3px 9px; border-radius: 20px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .table-chip.delivery { background: #1a1f35; border-color: #3b82f655; color: #93c5fd; }
+        .status-chip { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+        .status-chip.pending,.status-chip.preparing,.status-chip.ready { background: #1e3a5f; color: #60a5fa; }
+        .status-chip.delivered      { background: #14532d; color: #4ade80; }
+        .status-chip.bill_requested { background: #451a03; color: #f59e0b; }
+        .status-chip.billed         { background: #1a1a1a; color: #666; }
+        .order-card-body { padding: 12px 14px; }
+        .delivery-address-strip { background: #0d1525; border: 1px solid #3b82f622; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px; font-size: 12px; color: #93c5fd; display: flex; align-items: flex-start; gap: 6px; line-height: 1.5; }
+        .item-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
+        .item-row:last-child { border-bottom: none; }
+        .item-name { color: #ddd; }
+        .item-meta { display: flex; align-items: center; gap: 8px; }
+        .item-qty { background: #1a1a1a; color: #c8a96a; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+        .item-price { color: #888; font-size: 12px; }
+        .order-total { margin-top: 10px; padding-top: 10px; border-top: 1px solid #222; display: flex; justify-content: space-between; font-size: 14px; }
+        .order-total .amount { color: #c8a96a; font-weight: 700; font-family: 'Cormorant Garamond', serif; font-size: 17px; }
+        .order-note { margin-top: 8px; background: #1a1a1a; border-left: 2px solid #c8a96a; padding: 7px 10px; font-size: 12px; color: #aaa; border-radius: 0 6px 6px 0; }
+        .order-card-footer { padding: 10px 14px; border-top: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between; }
+        .order-time { font-size: 11px; color: #555; }
+        .btn-bill { background: #c8a96a; color: #000; border: none; padding: 8px 18px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+        .btn-bill:hover { opacity: .85; }
+        .btn-paid { background: #14532d; color: #4ade80; border: 1px solid #16a34a; padding: 8px 18px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s; }
+        .btn-paid:hover { background: #16a34a; color: #fff; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .bill-modal { background: #fff; color: #111; border-radius: 12px; width: 340px; padding: 28px 24px; }
+        .bill-header { text-align: center; border-bottom: 1px dashed #ccc; padding-bottom: 14px; margin-bottom: 14px; }
+        .bill-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 24px; }
+        .bill-header p { font-size: 12px; color: #666; margin-top: 3px; }
+        .bill-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+        .bill-divider { border: none; border-top: 1px dashed #ccc; margin: 10px 0; }
+        .bill-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; padding-top: 6px; }
+        .bill-footer { text-align: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #ccc; font-size: 12px; color: #666; }
+        .bill-actions { display: flex; gap: 10px; margin-top: 18px; }
+        .bill-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .btn-print { background: #111; color: #fff; }
+        .btn-mark-paid { background: #c8a96a; color: #000; }
+        .alert-banner { background: #451a03; border: 1px solid #92400e; color: #fcd34d; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .req-badge { background: #92400e; color: #fcd34d; font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; animation: blink 1s infinite; }
+        .del-badge { background: #1a1f35; color: #93c5fd; font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 700; letter-spacing: .5px; border: 1px solid #3b82f644; }
+        @keyframes blink { 0%,100%{opacity:1}50%{opacity:.4} }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <h1>🍴 Lumière</h1>
+        <span class="billing-badge">Billing Counter</span>
+    </div>
+    <div class="header-right">
+        <div class="live-dot"><span></span> Live — auto refreshes every 8s</div>
+        <div class="nav-links">
+            <a href="/delivery">🛵 Delivery</a>
+            <a href="/kitchen">🍳 Kitchen</a>
+            <a href="/admin">⚙️ Admin</a>
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="stats-bar">
+        <div class="stat-pill"><div class="num" id="statActive">0</div><div class="label">Active</div></div>
+        <div class="stat-pill"><div class="num" id="statRequested">0</div><div class="label">Bill Requested</div></div>
+        <div class="stat-pill"><div class="num" id="statDelivered">0</div><div class="label">Delivery Arrived</div></div>
+        <div class="stat-pill"><div class="num" id="statRevenue">₹0</div><div class="label">Today's Revenue</div></div>
+    </div>
+
+    <div id="alertBanner"></div>
+
+    <!-- DINE-IN: Customer requested bill → Send Bill + Mark Paid -->
+    <div class="section-wrap">
+        <div class="section-title">🔔 Bill Requested — Dine-In <span id="reqCount"></span></div>
+        <div id="billRequestedSection"><p class="empty-section">No bill requests yet.</p></div>
+    </div>
+
+    <!-- DELIVERY: Delivery boy marked delivered → Mark Paid only -->
+    <div class="section-wrap">
+        <div class="section-title">🛵 Delivery Arrived — Mark as Paid</div>
+        <div id="deliveryPaidSection"><p class="empty-section">No delivered delivery orders yet.</p></div>
+    </div>
+
+    <!-- In Progress -->
+    <div class="section-wrap">
+        <div class="section-title">👨‍🍳 In Progress</div>
+        <div id="inProgressSection"><p class="empty-section">No active orders.</p></div>
+    </div>
+
+    <!-- Billed Today -->
+    <div class="section-wrap">
+        <div class="section-title">💳 Billed Today <span class="today-note">Resets at midnight</span></div>
+        <div id="billedSection"><p class="empty-section">No billed orders yet today.</p></div>
+    </div>
+</div>
+
+<div id="billModal" style="display:none;" class="modal-overlay">
+    <div class="bill-modal" id="billContent"></div>
+</div>
+
+<script>
+var lastBillReqIds = [];
+
+function timeSince(dateStr) {
+    var d = new Date(dateStr), secs = Math.floor((new Date() - d) / 1000);
+    if (secs < 60)   return secs + 's ago';
+    if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+    return Math.floor(secs / 3600) + 'h ago';
+}
+
+function isToday(dateStr) {
+    var d = new Date(dateStr), n = new Date();
+    return d.getDate()===n.getDate() && d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear();
+}
+
+function statusLabel(s) {
+    return {pending:'⏳ Pending',preparing:'👨‍🍳 Preparing',ready:'📦 Ready',delivered:'✅ Delivered',bill_requested:'🔔 Bill Requested',billed:'💳 Billed'}[s]||s;
+}
+
+function tableChip(o) {
+    if (o.order_type==='delivery') {
+        var sh = o.delivery_address ? o.delivery_address.substring(0,26)+(o.delivery_address.length>26?'…':'') : 'Delivery';
+        return '<span class="table-chip delivery" title="'+(o.delivery_address||'')+'">🛵 '+sh+'</span>';
+    }
+    return '<span class="table-chip">🪑 Table '+o.table+'</span>';
+}
+
+function cardHtml(o, showSendBillBtn, showPaidBtn) {
+    var isD = o.order_type==='delivery';
+    var html =
+        '<div class="order-card '+o.status+(isD?' delivery-card':'')+'">' +
+        '<div class="order-card-header">' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+                '<span class="order-id">#'+o.id+'</span>' +
+                (o.status==='bill_requested'?'<span class="req-badge">Bill Req</span>':'') +
+                (isD?'<span class="del-badge">DELIVERY</span>':'') +
+            '</div>' +
+            '<div style="display:flex;gap:8px;align-items:center;">'+tableChip(o)+
+                '<span class="status-chip '+o.status+'">'+statusLabel(o.status)+'</span>' +
+            '</div>' +
+        '</div><div class="order-card-body">';
+
+    if (isD && o.delivery_address) {
+        html += '<div class="delivery-address-strip">📍 <span>'+o.delivery_address+'</span></div>';
+    }
+
+    o.items.forEach(function(item){
+        html += '<div class="item-row"><span class="item-name">'+item.name+'</span>' +
+            '<span class="item-meta"><span class="item-qty">×'+item.qty+'</span>' +
+            '<span class="item-price">₹'+item.subtotal+'</span></span></div>';
+    });
+
+    if (o.note) html += '<div class="order-note">📝 '+o.note+'</div>';
+
+    html += '<div class="order-total"><span style="color:#aaa;font-size:13px;">Total</span>' +
+        '<span class="amount">₹'+o.total+'</span></div></div>' +
+        '<div class="order-card-footer"><span class="order-time">🕐 '+timeSince(o.created)+'</span>' +
+        '<div style="display:flex;gap:8px;">';
+
+    // Only show Send Bill for dine-in, not delivery
+    if (showSendBillBtn && !isD) {
+        html += '<button class="btn-bill" onclick="sendBill('+JSON.stringify(o).replace(/"/g,'&quot;')+')">📤 Send Bill</button>';
+    }
+    if (showPaidBtn) {
+        html += '<button class="btn-paid" onclick="markPaid('+o.id+',this)">💳 Mark Paid</button>';
+    }
+
+    html += '</div></div></div>';
+    return html;
+}
+
+/* Send bill to the customer's UI (stores bill data server-side, customer polls it) */
+function sendBill(o) {
+    fetch('/billing/send/'+o.id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: o })
+    }).then(function(r){ return r.json(); }).then(function(d){
+        if (d.success) {
+            /* Visual feedback on the card button */
+            var btns = document.querySelectorAll('[onclick*="sendBill"]');
+            btns.forEach(function(btn){
+                if (btn.getAttribute('onclick').indexOf('"id":'+o.id) !== -1 ||
+                    btn.getAttribute('onclick').indexOf('"id": '+o.id) !== -1) {
+                    btn.textContent = '✅ Bill Sent';
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                }
+            });
+        } else {
+            alert('Failed to send bill. Please try again.');
+        }
+    }).catch(function(){
+        alert('Network error. Please try again.');
+    });
+}
+
+function markPaid(id, btn) {
+    btn.disabled=true; btn.textContent='…';
+    fetch('/billing/generate/'+id).then(function(r){return r.json();}).then(function(d){
+        if(d.success){ document.getElementById('billModal').style.display='none'; loadOrders(); }
+    });
+}
+
+function renderSection(elId, orders, showSendBill, showPaid) {
+    var el = document.getElementById(elId);
+    if (!orders.length){ el.innerHTML='<p class="empty-section">None right now.</p>'; return; }
+    var h='<div class="orders-grid">'; orders.forEach(function(o){ h+=cardHtml(o,showSendBill,showPaid); });
+    el.innerHTML=h+'</div>';
+}
+
+function loadOrders() {
+    fetch('/billing/poll').then(function(r){return r.json();}).then(function(orders){
+
+        /* Dine-in: customer pressed Request Bill */
+        var billReq = orders.filter(function(o){
+            return o.status==='bill_requested' && o.order_type!=='delivery';
+        });
+
+        /* Delivery: delivery boy marked as delivered → billing pays */
+        var delDone = orders.filter(function(o){
+            return o.status==='delivered' && o.order_type==='delivery';
+        });
+
+        /* In progress: anything not yet done */
+        var inProg = orders.filter(function(o){
+            return ['pending','preparing','ready'].indexOf(o.status)!==-1;
+        });
+
+        /* Today's billed only */
+        var billed = orders.filter(function(o){ return o.status==='billed' && isToday(o.created); });
+        var revenue = billed.reduce(function(s,o){return s+o.total;},0);
+
+        document.getElementById('statActive').textContent    = inProg.length;
+        document.getElementById('statRequested').textContent = billReq.length;
+        document.getElementById('statDelivered').textContent = delDone.length;
+        document.getElementById('statRevenue').textContent   = '₹'+revenue.toFixed(0);
+
+        /* Sound for new bill requests */
+        var reqIds = billReq.map(function(o){return o.id;});
+        var hasNew = reqIds.some(function(id){return lastBillReqIds.indexOf(id)===-1;});
+        if (hasNew && lastBillReqIds.length>0 && billReq.length>0) {
+            try {
+                var ctx=new(window.AudioContext||window.webkitAudioContext)();
+                [440,550,660].forEach(function(f,i){
+                    var o=ctx.createOscillator(),g=ctx.createGain();
+                    o.connect(g);g.connect(ctx.destination);o.frequency.value=f;
+                    g.gain.setValueAtTime(0.2,ctx.currentTime+i*0.12);
+                    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.12+0.2);
+                    o.start(ctx.currentTime+i*0.12);o.stop(ctx.currentTime+i*0.12+0.2);
+                });
+            } catch(e){}
+        }
+        lastBillReqIds=reqIds;
+
+        var banner=document.getElementById('alertBanner');
+        if (billReq.length>0) {
+            var tables=billReq.map(function(o){return 'Table '+o.table;}).join(', ');
+            banner.innerHTML='<div class="alert-banner">🔔 <strong>Bill Requested</strong> — '+tables+'</div>';
+        } else { banner.innerHTML=''; }
+
+        var rc=document.getElementById('reqCount');
+        rc.textContent=billReq.length>0?'('+billReq.length+')':'';
+        rc.style.color='#f59e0b';
+
+        /* Dine-in bill_requested → Send Bill + Mark Paid
+           Delivery delivered     → Mark Paid only
+           In progress            → no buttons
+           Billed today           → no buttons */
+        renderSection('billRequestedSection', billReq,  true,  true);
+        renderSection('deliveryPaidSection',  delDone,  false, true);
+        renderSection('inProgressSection',    inProg,   false, false);
+        renderSection('billedSection',        billed,   false, false);
+    });
+}
+
+loadOrders();
+setInterval(loadOrders, 8000);
+</script>
+</body>
+</html>
