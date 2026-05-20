@@ -29,7 +29,8 @@ def get_db():
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
         database=os.getenv("DB_NAME"),
-        port=int(os.getenv("DB_PORT"))
+        port=int(os.getenv("DB_PORT")),
+        ssl_disabled=False  # Required for Aiven SSL
     )
 
 # ── AUTO-MIGRATE: add columns if they don't exist ──
@@ -53,7 +54,6 @@ def migrate_db():
             ALTER TABLE items
             ADD COLUMN IF NOT EXISTS description TEXT DEFAULT NULL
         """)
-        # New column: bill_sent flag so customer UI can show the bill
         cursor.execute("""
             ALTER TABLE orders
             ADD COLUMN IF NOT EXISTS bill_sent TINYINT(1) NOT NULL DEFAULT 0
@@ -215,7 +215,6 @@ def billing_generate(id):
 # ── SEND BILL TO CUSTOMER UI ───────────────────────
 @app.route('/billing/send/<int:id>', methods=['POST'])
 def billing_send(id):
-    """Mark bill_sent=1 on the order so the customer's UI can display it."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("UPDATE orders SET bill_sent=1 WHERE id=%s AND order_type='dinein'", (id,))
@@ -226,7 +225,6 @@ def billing_send(id):
 # ── ONE-TIME FIX: add bill_sent column ────────────
 @app.route('/fix-db')
 def fix_db():
-    """Visit this URL once if Send Bill gives a network error."""
     try:
         db = get_db()
         cursor = db.cursor()
@@ -240,7 +238,6 @@ def fix_db():
 # -- CUSTOMER: GET BILL FOR TABLE --
 @app.route('/get-bill')
 def get_bill():
-    """Customer UI polls this. Combines ALL sent bills for the table."""
     table = request.args.get('table', '')
     if not table:
         return jsonify({'bill': None})
@@ -557,4 +554,4 @@ def delivery_action(id):
 
 if __name__ == '__main__':
     migrate_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)
