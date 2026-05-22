@@ -51,10 +51,13 @@ function openCart() {
     var s = document.querySelector('.summary');
     if (!s) return;
     if (window.innerWidth <= 900) {
-        s.style.display = 'block';
-        setTimeout(function() { s.classList.toggle('active'); }, 10);
-    } else {
-        s.classList.toggle('active');
+        if (s.classList.contains('active')) {
+            s.classList.remove('active');
+            setTimeout(function() { s.style.display = 'none'; }, 400);
+        } else {
+            s.style.display = 'block';
+            setTimeout(function() { s.classList.add('active'); }, 10);
+        }
     }
 }
 
@@ -75,19 +78,15 @@ function placeOrder() {
         return;
     }
 
-    /* Delivery customers MUST be logged in */
     if (isDelivery) {
         var loggedInUser = localStorage.getItem('lumiere_user');
         if (!loggedInUser) {
-            // Close cart panel if open
             var summary = document.querySelector('.summary');
             if (summary && window.innerWidth <= 900) {
                 summary.classList.remove('active');
                 setTimeout(function() { summary.style.display = 'none'; }, 300);
             }
-            // Show login modal with a message
             openLoginModal('login');
-            // Add a hint inside the modal
             setTimeout(function() {
                 var hint = document.querySelector('.login-hint');
                 if (hint) {
@@ -126,7 +125,7 @@ function placeOrder() {
         payload.table = table;
     }
 
-    fetch('https:///place-order', {
+    fetch('/place-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -151,11 +150,11 @@ function placeOrder() {
         alert('Network error. Please try again.');
     });
 }
+
 function showOrderSuccess(orderId, isDelivery) {
     var existing = document.getElementById('orderSuccessOverlay');
     if (existing) existing.remove();
 
-    // Inject animation keyframes only once
     if (!document.getElementById('lumiere-anim-style')) {
         var style = document.createElement('style');
         style.id = 'lumiere-anim-style';
@@ -165,7 +164,7 @@ function showOrderSuccess(orderId, isDelivery) {
         document.head.appendChild(style);
     }
 
-    var msg  = isDelivery
+    var msg = isDelivery
         ? 'Your order has been placed!<br>We will deliver it to your address shortly. \u{1F6F5}'
         : "Your order is being prepared.<br>We'll serve it to your table shortly. \u{1F37D}\uFE0F";
     var icon = isDelivery ? '\u{1F6F5}' : '\u2705';
@@ -263,22 +262,18 @@ function showBillRequestedConfirm() {
             'padding:40px 32px;text-align:center;max-width:340px;width:88%;' +
             'animation:cardPopIn .35s cubic-bezier(.34,1.56,.64,1);' +
             'box-shadow:0 0 80px rgba(200,169,106,0.12);">' +
-
             '<div style="font-size:52px;margin-bottom:14px;line-height:1;">🧾</div>' +
-
             '<h2 style="' +
                 'color:#c8a96a;font-family:\'Cormorant Garamond\',serif;' +
                 'font-size:26px;margin:0 0 10px;font-weight:600;letter-spacing:.5px;">' +
                 'Bill Requested!' +
             '</h2>' +
-
             '<div style="border-top:1px solid #222;border-bottom:1px solid #222;margin:0 0 22px;padding:14px 0;">' +
                 '<p style="color:#aaa;font-size:13px;margin:0;line-height:1.8;">' +
                     'Your bill is being prepared.<br>' +
                     'Our team will be with you shortly. 🙏' +
                 '</p>' +
             '</div>' +
-
             '<button ' +
                 'onclick="document.getElementById(\'billConfirmOverlay\').remove()" ' +
                 'onmouseover="this.style.opacity=\'0.82\'" ' +
@@ -465,7 +460,6 @@ function handleLogin() {
     updateProfileUI(userName);
     closeLoginModal();
     localStorage.setItem('lumiere_user', userName);
-    /* If delivery mode and no address yet, open address modal right after login */
     var isDeliveryMode = !new URLSearchParams(window.location.search).get('table');
     if (isDeliveryMode && !localStorage.getItem('lumiere_delivery_address')) {
         setTimeout(function() { openDeliveryModal(); }, 350);
@@ -477,7 +471,6 @@ function handleRegister() {
     updateProfileUI(userName);
     closeLoginModal();
     localStorage.setItem('lumiere_user', userName);
-    /* If delivery mode and no address yet, open address modal right after register */
     var isDeliveryMode = !new URLSearchParams(window.location.search).get('table');
     if (isDeliveryMode && !localStorage.getItem('lumiere_delivery_address')) {
         setTimeout(function() { openDeliveryModal(); }, 350);
@@ -506,7 +499,6 @@ function updateProfileUI(name) {
 function openDeliveryModal() {
     document.querySelectorAll('.profile-dropdown').forEach(function(d) { d.classList.remove('open'); });
 
-    /* Delivery customers must be logged in before setting address */
     var isDeliveryMode = !new URLSearchParams(window.location.search).get('table');
     if (isDeliveryMode && !localStorage.getItem('lumiere_user')) {
         openLoginModal('login');
@@ -601,26 +593,22 @@ function saveDeliveryAddress(type) {
 
     var fullAddress = [flat, area, city, pin].filter(Boolean).join(', ');
 
-    // Save address + set global delivery mode
     localStorage.setItem('lumiere_delivery_address', JSON.stringify({
         type: type, address: fullAddress,
         flat: flat, area: area, city: city, pin: pin
     }));
     window.orderMode = 'delivery';
 
-    // Update navbar label
     var icons = { home: '🏠', work: '💼', other: '📍' };
     var label = (icons[type] || '📍') + ' ' + (city || 'Delivery') + ' ▾';
     document.querySelectorAll('.deliver-value').forEach(function(el) { el.textContent = label; });
 
-    // Update cart panel to reflect delivery mode
     var summaryH3 = document.querySelector('.summary h3');
     if (summaryH3) summaryH3.innerHTML = '🛵 Delivery Order';
 
     var placeBtn = document.querySelector('.place');
     if (placeBtn) placeBtn.textContent = 'Place Delivery Order';
 
-    // Hide Request Bill — not applicable for delivery
     var billBtn = document.getElementById('requestBillBtn');
     if (billBtn) billBtn.style.display = 'none';
 
@@ -695,7 +683,6 @@ function openDineInConfirm() {
     document.body.appendChild(overlay);
 }
 
-/* keep backward compatibility */
 function setOrderMode(mode) {
     if (mode === 'delivery') openDeliveryModal();
     else openDineInConfirm();
@@ -729,10 +716,16 @@ function handleScroll() {
             if (cartBar) cartBar.style.display = 'none';
         } else {
             if (cartBar) cartBar.style.display = 'flex';
+            if (summary && !summary.classList.contains('active')) {
+                summary.style.display = 'none';
+            }
         }
         if (floatBtn) floatBtn.style.display = 'flex';
     } else {
-        if (summary && window.innerWidth > 900) summary.style.display = 'none';
+        if (summary) {
+            summary.classList.remove('active');
+            summary.style.display = 'none';
+        }
         if (cartBar) cartBar.style.display = 'none';
         if (floatBtn) { floatBtn.style.display = 'none'; floatBtn.classList.remove('open'); }
     }
@@ -842,14 +835,9 @@ window.onload = function() {
     var saved = localStorage.getItem('lumiere_user');
     if (saved) updateProfileUI(saved);
 
-    // Detect mode from URL:
-    // ?table=X  → ALWAYS dine-in, ignore any saved delivery address
-    // no table  → delivery mode (plain site link / delivery QR)
     var tableParam = new URLSearchParams(window.location.search).get('table');
 
     if (tableParam) {
-        // ── DINE-IN: table QR scanned ──
-        // Clear any leftover delivery mode, ensure dine-in UI
         window.orderMode = 'dinein';
         var summaryH3 = document.querySelector('.summary h3');
         if (summaryH3) summaryH3.innerHTML = '🪑 Table ' + tableParam + ' — Order Summary';
@@ -858,7 +846,6 @@ window.onload = function() {
         var billBtn = document.getElementById('requestBillBtn');
         if (billBtn) { billBtn.style.display = ''; billBtn.style.removeProperty('display'); }
     } else {
-        // ── DELIVERY: plain link / delivery QR ──
         window.orderMode = 'delivery';
         var summaryH3d = document.querySelector('.summary h3');
         if (summaryH3d) summaryH3d.innerHTML = '🛵 Delivery Order';
@@ -867,14 +854,12 @@ window.onload = function() {
         var billBtnD = document.getElementById('requestBillBtn');
         if (billBtnD) billBtnD.style.display = 'none';
 
-        // If no address saved yet, prompt after a short delay
         var savedRaw = localStorage.getItem('lumiere_delivery_address');
         if (!savedRaw) {
             setTimeout(function() { openDeliveryModal(); }, 1200);
         }
     }
 
-    // Restore saved delivery address label if any
     var savedAddr = localStorage.getItem('lumiere_delivery_address');
     if (savedAddr) {
         try {
