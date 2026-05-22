@@ -126,7 +126,7 @@ function placeOrder() {
         payload.table = table;
     }
 
-    fetch('/place-order', {
+    fetch('https:///place-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
