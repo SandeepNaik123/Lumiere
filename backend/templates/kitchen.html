@@ -207,15 +207,21 @@ function buildCard(o) {
         html += '<button class="btn-prepare" onclick="doAction(' + o.id + ',\'preparing\',this)">👨‍🍳 Start</button>';
     }
 
-    if (o.status === 'preparing') {
-        if (isDelivery) {
-            /* Delivery: kitchen marks "ready" → delivery boy picks it up */
-            html += '<button class="btn-ready" onclick="doAction(' + o.id + ',\'ready\',this)">📦 Ready for Pickup</button>';
-        } else {
-            /* Dine-in: kitchen marks delivered directly */
-            html += '<button class="btn-deliver" onclick="doAction(' + o.id + ',\'delivered\',this)">✅ Served</button>';
-        }
+  if (o.status === 'pending') {
+    html += '<button class="btn-prepare" onclick="doAction(' + o.id + ',\'preparing\',this)">👨‍🍳 Start Cooking</button>';
+}
+
+if (o.status === 'preparing') {
+    if (isDelivery) {
+        html += '<button class="btn-ready" onclick="doAction(' + o.id + ',\'ready\',this)">📦 Ready for Pickup</button>';
+    } else {
+        html += '<button class="btn-deliver" onclick="doAction(' + o.id + ',\'delivered\',this)">✅ Food Delivered</button>';
     }
+}
+
+if (o.status === 'ready' && isDelivery) {
+    html += '<button class="btn-deliver" onclick="doAction(' + o.id + ',\'delivered\',this)" style="background:#14532d;color:#4ade80;border:1px solid #16a34a;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">✅ Delivered</button>';
+}
 
     html += '</div></div></div>';
     return html;
