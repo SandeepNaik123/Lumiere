@@ -12,7 +12,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Jinja filter to parse JSON in templates
 @app.template_filter('from_json')
 def from_json_filter(value):
     try:
@@ -30,10 +29,9 @@ def get_db():
         password=os.getenv("DB_PASSWORD"),
         database=os.getenv("DB_NAME"),
         port=int(os.getenv("DB_PORT")),
-        ssl_disabled=False  # Required for Aiven SSL
+        ssl_disabled=False
     )
 
-# ── AUTO-MIGRATE: add columns if they don't exist ──
 def migrate_db():
     try:
         db = get_db()
@@ -63,7 +61,6 @@ def migrate_db():
     except Exception as e:
         print(f"[migrate_db] {e}")
 
-# ── HOME ───────────────────────────────────────────
 @app.route('/')
 def home():
     db = get_db()
@@ -76,7 +73,6 @@ def home():
     table = request.args.get('table', '')
     return render_template("index.html", items=items, featured_items=featured_items, table=table)
 
-# ── PLACE ORDER ────────────────────────────────────
 @app.route('/place-order', methods=['POST'])
 def place_order():
     db = get_db()
@@ -111,13 +107,12 @@ def place_order():
     db.close()
     return jsonify({'success': True, 'order_id': order_id})
 
-# ── KITCHEN PANEL ──────────────────────────────────
 @app.route('/kitchen')
 def kitchen():
     db = get_db()
     cursor = db.cursor()
     cursor.execute(
-        "SELECT * FROM orders WHERE status IN ('pending','preparing') ORDER BY created_at ASC"
+        "SELECT id, table_number, items, total, note, status, created_at, order_type, delivery_address, customer_name FROM orders WHERE status IN ('pending','preparing') ORDER BY created_at ASC"
     )
     orders = cursor.fetchall()
     db.close()
@@ -128,26 +123,23 @@ def kitchen_poll():
     db = get_db()
     cursor = db.cursor()
     cursor.execute(
-        "SELECT * FROM orders WHERE status IN ('pending','preparing') ORDER BY created_at ASC"
+        "SELECT id, table_number, items, total, note, status, created_at, order_type, delivery_address, customer_name FROM orders WHERE status IN ('pending','preparing') ORDER BY created_at ASC"
     )
     rows = cursor.fetchall()
     db.close()
     orders = []
     for o in rows:
-        order_type       = o[7]  if len(o) > 7 else 'dinein'
-        delivery_address = o[8]  if len(o) > 8 else ''
-        customer_name    = o[9]  if len(o) > 9 else ''
         orders.append({
             'id':               o[0],
             'table':            o[1],
             'items':            json.loads(o[2]),
             'total':            float(o[3]),
-            'status':           o[4],
-            'note':             o[5] or '',
+            'note':             o[4] or '',
+            'status':           o[5],
             'created':          str(o[6]),
-            'order_type':       order_type,
-            'delivery_address': delivery_address or '',
-            'customer_name':    customer_name or '',
+            'order_type':       o[7] if len(o) > 7 else 'dinein',
+            'delivery_address': o[8] if len(o) > 8 else '',
+            'customer_name':    o[9] if len(o) > 9 else '',
         })
     return jsonify(orders)
 
@@ -163,13 +155,12 @@ def kitchen_action(id, action):
     db.close()
     return jsonify({'success': True})
 
-# ── BILLING PANEL ──────────────────────────────────
 @app.route('/billing')
 def billing():
     db = get_db()
     cursor = db.cursor()
     cursor.execute(
-        "SELECT * FROM orders WHERE status != 'cancelled' ORDER BY created_at DESC"
+        "SELECT id, table_number, items, total, note, status, created_at, order_type, delivery_address, customer_name FROM orders WHERE status != 'cancelled' ORDER BY created_at DESC"
     )
     orders = cursor.fetchall()
     db.close()
@@ -180,26 +171,23 @@ def billing_poll():
     db = get_db()
     cursor = db.cursor()
     cursor.execute(
-        "SELECT * FROM orders WHERE status != 'cancelled' ORDER BY created_at DESC"
+        "SELECT id, table_number, items, total, note, status, created_at, order_type, delivery_address, customer_name FROM orders WHERE status != 'cancelled' ORDER BY created_at DESC"
     )
     rows = cursor.fetchall()
     db.close()
     orders = []
     for o in rows:
-        order_type       = o[7]  if len(o) > 7 else 'dinein'
-        delivery_address = o[8]  if len(o) > 8 else ''
-        customer_name    = o[9]  if len(o) > 9 else ''
         orders.append({
             'id':               o[0],
             'table':            o[1],
             'items':            json.loads(o[2]),
             'total':            float(o[3]),
-            'status':           o[4],
-            'note':             o[5] or '',
+            'note':             o[4] or '',
+            'status':           o[5],
             'created':          str(o[6]),
-            'order_type':       order_type,
-            'delivery_address': delivery_address or '',
-            'customer_name':    customer_name or '',
+            'order_type':       o[7] if len(o) > 7 else 'dinein',
+            'delivery_address': o[8] if len(o) > 8 else '',
+            'customer_name':    o[9] if len(o) > 9 else '',
         })
     return jsonify(orders)
 
@@ -212,7 +200,6 @@ def billing_generate(id):
     db.close()
     return jsonify({'success': True})
 
-# ── SEND BILL TO CUSTOMER UI ───────────────────────
 @app.route('/billing/send/<int:id>', methods=['POST'])
 def billing_send(id):
     db = get_db()
@@ -222,7 +209,6 @@ def billing_send(id):
     db.close()
     return jsonify({'success': True})
 
-# ── ONE-TIME FIX: add bill_sent column ────────────
 @app.route('/fix-db')
 def fix_db():
     try:
@@ -231,11 +217,10 @@ def fix_db():
         cursor.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS bill_sent TINYINT(1) NOT NULL DEFAULT 0")
         db.commit()
         db.close()
-        return "✅ bill_sent column added successfully. You can close this tab."
+        return "bill_sent column added successfully."
     except Exception as e:
-        return f"ℹ️ {e}"
+        return f"{e}"
 
-# -- CUSTOMER: GET BILL FOR TABLE --
 @app.route('/get-bill')
 def get_bill():
     table = request.args.get('table', '')
@@ -283,7 +268,6 @@ def request_bill():
     db.close()
     return jsonify({'success': True})
 
-# ── ORDER STATUS (admin shortcut) ─────────────────
 @app.route('/admin/order/status/<int:id>/<status>')
 def update_order_status(id, status):
     allowed = ['pending', 'preparing', 'delivered', 'bill_requested', 'billed', 'cancelled']
@@ -305,7 +289,6 @@ def delete_order(id):
     db.close()
     return redirect(url_for('admin'))
 
-# ── BOOKING ────────────────────────────────────────
 @app.route('/booking')
 def booking():
     return render_template("booking.html")
@@ -328,7 +311,6 @@ def booking_submit():
     db.close()
     return render_template("booking.html", success=True)
 
-# ── ADMIN ──────────────────────────────────────────
 @app.route('/admin')
 def admin():
     db = get_db()
@@ -434,7 +416,6 @@ def edit_item(id):
     db.close()
     return render_template("edit.html", item=item)
 
-# ── BOOKING ACTIONS ────────────────────────────────
 @app.route('/admin/booking/confirm/<int:id>', methods=['POST'])
 def confirm_booking(id):
     db = get_db()
@@ -466,7 +447,6 @@ def delete_booking(id):
     db.close()
     return redirect(url_for('admin'))
 
-# ── QR / TABLES ────────────────────────────────────
 @app.route('/admin/qr')
 def qr_page():
     db = get_db()
@@ -513,7 +493,6 @@ def delete_table(id):
     db.close()
     return redirect(url_for('qr_page'))
 
-# ── DELIVERY PANEL ─────────────────────────────────
 @app.route('/delivery')
 def delivery():
     return render_template("delivery.html")
@@ -523,7 +502,7 @@ def delivery_poll():
     db = get_db()
     cursor = db.cursor()
     cursor.execute(
-        "SELECT * FROM orders WHERE order_type='delivery' AND status IN ('ready','delivered') ORDER BY created_at DESC"
+        "SELECT id, table_number, items, total, note, status, created_at, order_type, delivery_address, customer_name FROM orders WHERE order_type='delivery' AND status IN ('ready','delivered') ORDER BY created_at DESC"
     )
     rows = cursor.fetchall()
     db.close()
@@ -534,8 +513,8 @@ def delivery_poll():
             'table':            o[1],
             'items':            json.loads(o[2]),
             'total':            float(o[3]),
-            'status':           o[4],
-            'note':             o[5] or '',
+            'note':             o[4] or '',
+            'status':           o[5],
             'created':          str(o[6]),
             'order_type':       o[7] if len(o) > 7 else 'delivery',
             'delivery_address': o[8] if len(o) > 8 else '',
