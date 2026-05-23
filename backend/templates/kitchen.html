@@ -37,19 +37,12 @@
             border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 8px;
         }
         .section-wrap { margin-bottom: 32px; }
-
-        .empty-state { text-align: center; padding: 60px 20px; color: #444; }
-        .empty-state .icon { font-size: 52px; margin-bottom: 14px; }
-        .empty-state p { font-size: 15px; }
         .empty-section { color: #444; font-size: 13px; padding: 16px 0; }
-
         .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
 
         .order-card { background: #111; border: 1px solid #222; border-radius: 14px; overflow: hidden; }
         .order-card.pending   { border-left: 3px solid #f59e0b; }
         .order-card.preparing { border-left: 3px solid #3b82f6; }
-
-        /* Delivery card gets a blue tint */
         .order-card.delivery-order { background: #0d1525; }
 
         .order-card-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1a1a1a; }
@@ -87,7 +80,6 @@
         .btn-deliver { background: #14532d; color: #4ade80; border: 1px solid #16a34a; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; }
         .btn-deliver:hover { background: #16a34a; color: #fff; }
 
-        /* Ready for pickup — orange */
         .btn-ready { background: #431407; color: #fb923c; border: 1px solid #ea580c; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; }
         .btn-ready:hover { background: #ea580c; color: #fff; }
 
@@ -121,13 +113,11 @@
         <div class="stat-pill"><div class="num" id="statDelivery">0</div><div class="label">Delivery Orders</div></div>
     </div>
 
-    <!-- Dine-in orders -->
     <div class="section-wrap">
         <div class="section-title">🪑 Dine-In Orders</div>
         <div id="dineinContainer"><p class="empty-section">No dine-in orders right now.</p></div>
     </div>
 
-    <!-- Delivery orders -->
     <div class="section-wrap">
         <div class="section-title">🛵 Delivery Orders</div>
         <div id="deliveryContainer"><p class="empty-section">No delivery orders right now.</p></div>
@@ -156,7 +146,7 @@ function doAction(id, action, btn) {
 
 function buildCard(o) {
     var isDelivery = o.order_type === 'delivery';
-    var isNew      = o.status === 'pending';
+    var isNew = o.status === 'pending';
 
     var tableChip = isDelivery
         ? '<span class="table-chip delivery" title="' + (o.delivery_address || '') + '">🛵 ' +
@@ -168,7 +158,7 @@ function buildCard(o) {
         '<div class="order-card-header">' +
             '<div style="display:flex;align-items:center;gap:8px;">' +
                 '<span class="order-id">#' + o.id + '</span>' +
-                (isNew      ? '<span class="new-badge">NEW</span>'          : '') +
+                (isNew ? '<span class="new-badge">NEW</span>' : '') +
                 (isDelivery ? '<span class="delivery-badge">DELIVERY</span>' : '') +
             '</div>' +
             '<div style="display:flex;align-items:center;gap:8px;">' +
@@ -180,7 +170,6 @@ function buildCard(o) {
         '</div>' +
         '<div class="order-card-body">';
 
-    /* Show full address for delivery */
     if (isDelivery && o.delivery_address) {
         html += '<div class="delivery-address-strip">📍 <span>' + o.delivery_address + '</span></div>';
     }
@@ -203,25 +192,22 @@ function buildCard(o) {
             '<span class="order-time">🕐 ' + timeSince(o.created) + '</span>' +
             '<div class="action-btns">';
 
+    /* ── BUTTONS ── */
     if (o.status === 'pending') {
-        html += '<button class="btn-prepare" onclick="doAction(' + o.id + ',\'preparing\',this)">👨‍🍳 Start</button>';
+        html += '<button class="btn-prepare" onclick="doAction(' + o.id + ',\'preparing\',this)">👨‍🍳 Start Cooking</button>';
     }
 
-  if (o.status === 'pending') {
-    html += '<button class="btn-prepare" onclick="doAction(' + o.id + ',\'preparing\',this)">👨‍🍳 Start Cooking</button>';
-}
-
-if (o.status === 'preparing') {
-    if (isDelivery) {
-        html += '<button class="btn-ready" onclick="doAction(' + o.id + ',\'ready\',this)">📦 Ready for Pickup</button>';
-    } else {
-        html += '<button class="btn-deliver" onclick="doAction(' + o.id + ',\'delivered\',this)">✅ Food Delivered</button>';
+    if (o.status === 'preparing') {
+        if (isDelivery) {
+            html += '<button class="btn-ready" onclick="doAction(' + o.id + ',\'ready\',this)">📦 Ready for Pickup</button>';
+        } else {
+            html += '<button class="btn-deliver" onclick="doAction(' + o.id + ',\'delivered\',this)">✅ Food Delivered</button>';
+        }
     }
-}
 
-if (o.status === 'ready' && isDelivery) {
-    html += '<button class="btn-deliver" onclick="doAction(' + o.id + ',\'delivered\',this)" style="background:#14532d;color:#4ade80;border:1px solid #16a34a;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">✅ Delivered</button>';
-}
+    if (o.status === 'ready' && isDelivery) {
+        html += '<button class="btn-deliver" onclick="doAction(' + o.id + ',\'delivered\',this)">✅ Delivered</button>';
+    }
 
     html += '</div></div></div>';
     return html;
@@ -239,7 +225,6 @@ function loadOrders() {
             document.getElementById('statPreparing').textContent = preparing.length;
             document.getElementById('statDelivery').textContent  = delivery.length;
 
-            /* Sound for new orders */
             var newIds = orders.map(function(o) { return o.id; });
             var hasNew = newIds.some(function(id) { return lastOrderIds.indexOf(id) === -1; });
             if (hasNew && lastOrderIds.length > 0) {
@@ -256,7 +241,6 @@ function loadOrders() {
             }
             lastOrderIds = newIds;
 
-            /* Split dine-in vs delivery */
             var dinein    = orders.filter(function(o) { return o.order_type !== 'delivery'; });
             var delOrders = orders.filter(function(o) { return o.order_type === 'delivery'; });
 
