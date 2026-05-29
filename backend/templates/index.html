@@ -2,9 +2,6 @@
 <html>
 <head>
     <title>Lumière</title>
-    <meta charset="UTF-8">
-     <meta name="ts-viewport" content="width=device-width,initial-scale=1.0">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -251,7 +248,7 @@
 <!-- STICKY NAVBAR (hidden via CSS) -->
 <nav class="navbar" id="stickyNav"></nav>
 
-<!-- BOTTOM FLOATING MENU — Special and Combo removed -->
+<!-- BOTTOM FLOATING MENU -->
 <div class="bottom-menu-bar" id="floatMenuBtn">
     <div class="bm-categories" id="bmCategories">
         <button class="bm-cat active" onclick="drawerFilter('all')" id="bmc-all"><span class="bm-cat-icon">🍽️</span><span>All</span></button>
@@ -266,7 +263,7 @@
     </button>
 </div>
 
-<!-- MAIN MENU — Special and Combo sections removed -->
+<!-- MAIN MENU -->
 <div class="container" id="menu-section">
     <div class="menu">
 
@@ -479,16 +476,22 @@
             <span style="font-size:10px;color:#444;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">Done eating?</span>
             <span style="flex:1;height:1px;background:#1e1e1e;"></span>
         </div>
+
+        <!-- REQUEST BILL BUTTON — disabled by default, enabled when kitchen marks delivered -->
         <button
             onclick="requestBill()"
             id="requestBillBtn"
-            style="width:100%;padding:11px;background:transparent;border:1px solid #2a2a2a;border-radius:8px;color:#c8a96a;font-size:13px;font-family:inherit;cursor:pointer;letter-spacing:.3px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;"
-            onmouseover="this.style.background='#1a1a1a';this.style.borderColor='#c8a96a';"
-            onmouseout="this.style.background='transparent';this.style.borderColor='#2a2a2a';">
+            disabled
+            style="width:100%;padding:11px;background:transparent;border:1px solid #2a2a2a;border-radius:8px;color:#555;font-size:13px;font-family:inherit;cursor:not-allowed;letter-spacing:.3px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;opacity:0.45;"
+            title="Available once your food is delivered by the kitchen">
             🧾 Request Bill
         </button>
+        <!-- Hint text shown below the button -->
+        <p id="billBtnHint" style="font-size:11px;color:#444;text-align:center;margin-top:6px;letter-spacing:0.2px;">
+            Waiting for your food to be delivered…
+        </p>
 
-        <!-- Bill display area — shown when admin sends bill -->
+        <!-- Bill display area — shown when billing sends the bill -->
         <div id="billDisplayArea" style="display:none;margin-top:14px;background:#111;border:1px solid #c8a96a33;border-radius:10px;padding:14px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                 <span style="font-size:18px;">🧾</span>
@@ -565,13 +568,62 @@
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 
-<!-- Bill polling script — only runs for dine-in (table param present) -->
 {% if table %}
 <script>
 (function() {
     var table = '{{ table }}';
     var billShown = false;
 
+    /* ── Enable/Disable Request Bill Button ── */
+    function pollOrderStatus() {
+        fetch('/order-status?table=' + encodeURIComponent(table))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            var btn  = document.getElementById('requestBillBtn');
+            var hint = document.getElementById('billBtnHint');
+            if (!btn) return;
+
+            if (data.all_delivered) {
+                // Enable the button
+                btn.disabled = false;
+                btn.style.color        = '#c8a96a';
+                btn.style.opacity      = '1';
+                btn.style.cursor       = 'pointer';
+                btn.style.borderColor  = '#c8a96a55';
+                btn.title              = 'Tap to request your bill';
+                btn.onmouseover = function(){
+                    this.style.background   = '#1a1a1a';
+                    this.style.borderColor  = '#c8a96a';
+                };
+                btn.onmouseout = function(){
+                    this.style.background   = 'transparent';
+                    this.style.borderColor  = '#c8a96a55';
+                };
+                if (hint) {
+                    hint.textContent   = '✅ Your food has been delivered. You can now request the bill.';
+                    hint.style.color   = '#4ade80';
+                }
+            } else {
+                // Keep button disabled
+                btn.disabled = true;
+                btn.style.color       = '#555';
+                btn.style.opacity     = '0.45';
+                btn.style.cursor      = 'not-allowed';
+                btn.style.borderColor = '#2a2a2a';
+                btn.style.background  = 'transparent';
+                btn.title             = 'Available once your food is delivered by the kitchen';
+                btn.onmouseover = null;
+                btn.onmouseout  = null;
+                if (hint) {
+                    hint.textContent = 'Waiting for your food to be delivered…';
+                    hint.style.color = '#444';
+                }
+            }
+        })
+        .catch(function(){});
+    }
+
+    /* ── Bill Display Polling ── */
     function pollBill() {
         if (billShown) return;
         fetch('/get-bill?table=' + encodeURIComponent(table))
@@ -586,7 +638,7 @@
     }
 
     function showBillInSummary(bill) {
-        var area = document.getElementById('billDisplayArea');
+        var area    = document.getElementById('billDisplayArea');
         var itemsEl = document.getElementById('billDisplayItems');
         var totalEl = document.getElementById('billDisplayTotal');
         if (!area || !itemsEl || !totalEl) return;
@@ -598,14 +650,11 @@
                 '</div>';
         }).join('');
 
-        itemsEl.innerHTML = itemsHtml;
+        itemsEl.innerHTML  = itemsHtml;
         totalEl.textContent = '₹' + bill.total;
         area.style.display = 'block';
-
-        // Scroll the summary panel to show the bill
         area.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-        // Also open the cart panel if on mobile so user sees the bill
         var summary = document.querySelector('.summary');
         if (summary && window.innerWidth <= 900) {
             summary.style.display = 'block';
@@ -613,9 +662,11 @@
         }
     }
 
-    // Poll every 6 seconds
-    setInterval(pollBill, 6000);
+    // Run immediately then every 6 seconds
+    pollOrderStatus();
     pollBill();
+    setInterval(pollOrderStatus, 6000);
+    setInterval(pollBill, 6000);
 })();
 </script>
 {% endif %}

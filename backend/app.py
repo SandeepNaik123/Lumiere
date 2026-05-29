@@ -251,17 +251,56 @@ def get_bill():
         }
     })
 
+@app.route('/order-status')
+def order_status():
+    table = request.args.get('table', '')
+    if not table:
+        return jsonify({'all_delivered': False})
+    db = get_db()
+    cursor = db.cursor()
+    # Count orders that are NOT yet delivered for this table
+    cursor.execute(
+        """SELECT COUNT(*) FROM orders
+           WHERE table_number=%s AND order_type='dinein'
+           AND status NOT IN ('delivered','billed','cancelled','bill_requested')""",
+        (table,)
+    )
+    not_delivered = cursor.fetchone()[0]
+    # Count orders that ARE delivered
+    cursor.execute(
+        """SELECT COUNT(*) FROM orders
+           WHERE table_number=%s AND order_type='dinein'
+           AND status IN ('delivered','bill_requested')""",
+        (table,)
+    )
+    delivered = cursor.fetchone()[0]
+    db.close()
+    return jsonify({
+        'all_delivered': not_delivered == 0 and delivered > 0
+    })
+
 @app.route('/request-bill', methods=['POST'])
 def request_bill():
     data  = request.get_json()
     table = data.get('table', '')
     db = get_db()
     cursor = db.cursor()
+    # Only allow if all orders are delivered
+    cursor.execute(
+        """SELECT COUNT(*) FROM orders
+           WHERE table_number=%s AND order_type='dinein'
+           AND status NOT IN ('delivered','billed','cancelled','bill_requested')""",
+        (table,)
+    )
+    not_delivered = cursor.fetchone()[0]
+    if not_delivered > 0:
+        db.close()
+        return jsonify({'success': False, 'reason': 'not_delivered'})
     cursor.execute(
         """UPDATE orders SET status='bill_requested'
            WHERE table_number=%s
            AND order_type='dinein'
-           AND status IN ('pending','preparing','delivered','ready')""",
+           AND status='delivered'""",
         (table,)
     )
     db.commit()
